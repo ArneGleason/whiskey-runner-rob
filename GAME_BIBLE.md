@@ -4,9 +4,9 @@ Living world and mechanics bible for a browser-playable isometric motorcycle mis
 
 ## Core Pitch
 
-Rob is a retired guy living near the farms of Prince Edward Island. He likes motorcycles, cigars, whiskey, strange gadgets, model kits, half-plausible business ideas, and doing favours for an ever-expanding cast of friends.
+Rob is a self-declared post-paycheque entrepreneur living near the farms of Prince Edward Island. He likes motorcycles, cigars, whiskey, strange gadgets, model kits, half-plausible business ideas, and doing favours for an ever-expanding cast of friends.
 
-Now retired, Rob has developed a questionable but enthusiastic side business: running whiskey, cigars, and other odd goods from one end of PEI to the other on a big Suzuki-style cruiser motorcycle. Every run becomes a small mission. Every friend has a problem. Every road contains something ridiculous.
+Now liberated from conventional paycheques and other adult supervision, Rob has developed a questionable but enthusiastic side business: running whiskey, cigars, and other odd goods from one end of PEI to the other on a big Suzuki-style cruiser motorcycle. Every run becomes a small mission. Every friend has a problem. Every road contains something ridiculous.
 
 The game is an isometric, mission-based browser game with simple controls, cartoon graphics, crude absurd humour, and a growing island map full of recurring characters, hazards, shops, farm roads, ferry-adjacent chaos, beaches, red dirt, suspicious garages, and roadside nonsense.
 
@@ -23,7 +23,7 @@ The game is an isometric, mission-based browser game with simple controls, carto
    - PEI is compressed into a funny, readable, isometric world.
    - Red dirt roads, farms, fishing villages, coastal roads, bridges, potato fields, cottages, gas stops, and odd local landmarks create the feel.
 
-3. **Retired-Guy Mission Chaos**
+3. **Post-Paycheque Mission Chaos**
    - Rob is not saving the world.
    - Rob is delivering cigars, trading whiskey, fetching parts, helping buddies, and collecting things he finds deeply important.
    - The stakes are funny, personal, and increasingly absurd.
@@ -51,7 +51,7 @@ Humour should come from:
 - Overconfident bad plans.
 - Tiny problems treated as major operations.
 - Local gossip.
-- Retired-guy obsessions.
+- Post-paycheque obsessions.
 - Motorcycle inconvenience.
 - Suspiciously specific errands.
 - Objects Rob values far more than anyone else does.
@@ -102,7 +102,7 @@ The home base is where the player:
 
 ### Rob
 
-Retired. Restless. Rides a large Suzuki-style cruiser motorcycle. Likes whiskey, cigars, mechanical tinkering, toy/model kits, strange electronics, and running errands that become business opportunities if explained with enough confidence.
+Post-paycheque. Restless. Rides a large Suzuki-style cruiser motorcycle. Likes whiskey, cigars, mechanical tinkering, toy/model kits, strange electronics, and running errands that become business opportunities if explained with enough confidence.
 
 Rob should feel:
 
@@ -181,6 +181,20 @@ Rob rides a big cruiser motorcycle inspired by a large Suzuki cruiser. It should
 - Heat / attention.
 - Dome condition.
 - Parrot mood.
+
+### Sound Direction
+
+The first sound pass uses procedural browser audio instead of asset files.
+
+Current sound cues:
+
+- Ambient rural bed once play begins.
+- Occasional bird chirps.
+- Motorcycle engine rumble tied to riding speed.
+- Horn while riding.
+- Pickup, drop, use, mount, dismount, and mission-complete cues.
+
+Keep early sound effects comic and readable rather than realistic. The horn should feel useful mostly as emotional support.
 
 ### Possible Upgrades
 
@@ -371,6 +385,14 @@ This mission exists to prove:
 - Drop-off / delivery completion.
 - A simple mission objective changing from pickup to return.
 
+### Mission 1B: Model Kit Hostage Situation
+
+Unlocked after Dome Polish Run. Rob hears that Gord's yard sale has a rare model kit sealed in damp cardboard and guarded by a man who thinks eBay is witchcraft. The player retrieves the Damp Model Kit and brings it back to Rob's garage before the cardboard fully returns to nature.
+
+### Mission 1C: Apology Cigars for Burt
+
+Unlocked after Dome Polish Run. Rob called Burt's tractor "a drunk fridge with tire disease." Diplomacy requires picking up Apology Cigars from Rob's garage and delivering them to Burt's tractor shed on the farm side.
+
 ### Mission 2: Red Dirt Express
 
 A whiskey delivery has to cross farm roads after rain. Mud patches make the bike slide.
@@ -534,6 +556,7 @@ Implemented as a static browser prototype in `web/`.
 
 Current playable scope:
 
+- A flat scrolling intro sets up Rob, the parrot dome, basic controls, and the first objective before play begins.
 - Rob starts inside his house.
 - Rob can step out onto the property.
 - Rob can walk to the parked cruiser in the driveway.
@@ -547,11 +570,18 @@ Current playable scope:
 - Rob has a three-slot inventory.
 - Rob can pick up, drop, re-pick, and use carried items.
 - First mission: fetch acrylic dome polish from MacLeod's Hardware-ish and bring it back to Rob's garage.
+- Completing the first mission unlocks two branch missions: Model Kit Hostage Situation and Apology Cigars for Burt.
+- A mission browser lets the player switch the active errand.
+- The HUD guide and target marker point toward the current mission pickup, dropped mission item, or delivery point.
+- Rob's on-foot walk cycle has alternating leg/arm swing and body bob.
+- Procedural sound effects add ambience, birds, motorcycle engine rumble, horn, and inventory/mission cues.
+- The speedometer displays a scaled rural-road `km/h` value instead of raw world units.
 
 Prototype controls:
 
 - `WASD` / arrow keys: move on foot, throttle and steer on bike.
 - `E`, `Space`, or `Enter`: step out, mount, dismount, or honk while moving.
+- `M`: open the mission browser and switch active errands.
 - `R`: drop selected inventory item.
 - `F`: use selected inventory item.
 - `1`, `2`, `3`: select inventory slot.

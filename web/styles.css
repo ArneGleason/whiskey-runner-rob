@@ -60,6 +60,30 @@ body {
   min-width: 178px;
 }
 
+.hud .hud-guide {
+  min-width: 260px;
+  max-width: 360px;
+}
+
+.hud-button {
+  align-self: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 248, 223, 0.34);
+  border-radius: 8px;
+  background: rgba(255, 227, 140, 0.16);
+  color: #fff9df;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hud-button:hover,
+.hud-button:focus-visible {
+  background: rgba(255, 227, 140, 0.28);
+}
+
 .eyebrow,
 .hud-meter span {
   display: block;
@@ -97,6 +121,248 @@ body {
   backdrop-filter: blur(9px);
 }
 
+.mission-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(12, 25, 22, 0.64);
+  z-index: 8;
+}
+
+.mission-overlay[hidden] {
+  display: none;
+}
+
+.mission-panel {
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(255, 248, 223, 0.32);
+  border-radius: 8px;
+  background: rgba(28, 43, 36, 0.94);
+  color: #fff8df;
+  box-shadow: 0 24px 80px rgba(6, 17, 14, 0.48);
+  backdrop-filter: blur(10px);
+}
+
+.mission-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.mission-header h2 {
+  margin: 2px 0 0;
+  font-size: clamp(1.4rem, 4vw, 2.1rem);
+  line-height: 1.05;
+}
+
+.mission-close {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 248, 223, 0.34);
+  border-radius: 8px;
+  background: rgba(255, 248, 223, 0.1);
+  color: #fff8df;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mission-help {
+  margin: 0 0 14px;
+  color: rgba(255, 248, 223, 0.72);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.mission-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mission-card {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 248, 223, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 248, 223, 0.08);
+  color: #fff8df;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mission-card:hover,
+.mission-card:focus-visible,
+.mission-card.is-active {
+  border-color: rgba(255, 227, 140, 0.74);
+  background: rgba(255, 227, 140, 0.16);
+}
+
+.mission-card:disabled {
+  color: rgba(255, 248, 223, 0.5);
+  cursor: default;
+}
+
+.mission-card.is-complete {
+  border-color: rgba(149, 235, 196, 0.48);
+  background: rgba(88, 188, 133, 0.14);
+}
+
+.mission-card h3 {
+  margin: 0 0 5px;
+  font-size: 1.04rem;
+  line-height: 1.2;
+}
+
+.mission-card p {
+  margin: 0;
+  color: rgba(255, 248, 223, 0.72);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.mission-card .mission-card-status {
+  display: block;
+  margin-top: 9px;
+  color: #ffe38c;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 238, 169, 0.16), transparent 30%),
+    rgba(16, 31, 27, 0.94);
+  color: #fff8df;
+  z-index: 10;
+}
+
+.intro-overlay[hidden] {
+  display: none;
+}
+
+.intro-panel {
+  width: min(740px, 100%);
+}
+
+.intro-window {
+  position: relative;
+  height: min(66vh, 560px);
+  min-height: 390px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 248, 211, 0.32);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(37, 55, 43, 0.92), rgba(31, 41, 34, 0.92)),
+    #22362e;
+  box-shadow: 0 24px 80px rgba(6, 17, 14, 0.48);
+}
+
+.intro-window::before,
+.intro-window::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 120px;
+  pointer-events: none;
+  content: "";
+  z-index: 2;
+}
+
+.intro-window::before {
+  top: 0;
+  background: linear-gradient(180deg, #20382f 0%, rgba(32, 56, 47, 0) 100%);
+}
+
+.intro-window::after {
+  bottom: 0;
+  background: linear-gradient(0deg, #1f2e28 0%, rgba(31, 46, 40, 0) 100%);
+}
+
+.intro-scroll {
+  position: absolute;
+  right: clamp(24px, 7vw, 76px);
+  left: clamp(24px, 7vw, 76px);
+  top: 100%;
+  padding-bottom: 80px;
+  animation: intro-scroll 24s linear forwards;
+}
+
+.intro-kicker {
+  margin-top: 0;
+  color: #ffe38c;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.intro-scroll h1 {
+  margin: 0 0 22px;
+  color: #fff8df;
+  font-size: clamp(2.25rem, 7vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.intro-scroll p {
+  margin: 0 0 22px;
+  color: rgba(255, 248, 223, 0.92);
+  font-size: clamp(1rem, 2.2vw, 1.32rem);
+  font-weight: 650;
+  line-height: 1.48;
+}
+
+.intro-scroll .intro-signoff {
+  color: #bdf4ff;
+}
+
+.intro-start {
+  display: block;
+  width: min(360px, 100%);
+  margin: 14px auto 0;
+  padding: 12px 18px;
+  border: 1px solid rgba(255, 248, 211, 0.42);
+  border-radius: 8px;
+  background: #ffe38c;
+  color: #21372f;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 12px 34px rgba(6, 17, 14, 0.32);
+}
+
+.intro-start:disabled {
+  background: rgba(255, 248, 223, 0.14);
+  color: rgba(255, 248, 223, 0.6);
+  cursor: default;
+  box-shadow: none;
+}
+
+@keyframes intro-scroll {
+  from {
+    top: 100%;
+  }
+
+  to {
+    top: -112%;
+  }
+}
+
 @media (max-width: 640px) {
   .hud {
     right: 12px;
@@ -111,5 +377,35 @@ body {
 
   .hud strong {
     white-space: normal;
+  }
+
+  .hud-button {
+    flex: 1 1 100%;
+  }
+
+  .intro-overlay {
+    padding: 14px;
+  }
+
+  .intro-window {
+    height: 68vh;
+    min-height: 430px;
+  }
+
+  .intro-scroll {
+    right: 22px;
+    left: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-scroll {
+    position: static;
+    padding: 30px 24px 40px;
+    animation: none;
+  }
+
+  .intro-window {
+    overflow: auto;
   }
 }

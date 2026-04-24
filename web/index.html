@@ -30,8 +30,64 @@
           <span>Inventory</span>
           <strong id="inventoryLabel">Empty</strong>
         </div>
+        <div class="hud-meter hud-guide">
+          <span>Guide</span>
+          <strong id="guideLabel">Read the intro</strong>
+        </div>
+        <button id="missionButton" class="hud-button" type="button">Missions</button>
       </section>
       <div id="toast" class="toast" hidden></div>
+      <section id="missionOverlay" class="mission-overlay" aria-labelledby="missionTitle" hidden>
+        <div class="mission-panel">
+          <header class="mission-header">
+            <div>
+              <span class="eyebrow">Rob's Highly Organized Business Desk</span>
+              <h2 id="missionTitle">Mission Browser</h2>
+            </div>
+            <button id="missionClose" class="mission-close" type="button" aria-label="Close mission browser">Close</button>
+          </header>
+          <p class="mission-help">Pick the errand Rob is currently pretending is a business vertical. Press M any time to come back here.</p>
+          <div id="missionList" class="mission-list"></div>
+        </div>
+      </section>
+      <section id="introOverlay" class="intro-overlay" aria-labelledby="introTitle" aria-describedby="introCopy">
+        <div class="intro-panel">
+          <div class="intro-window">
+            <div id="introCopy" class="intro-scroll">
+              <p class="intro-kicker">Prince Edward Island. Post-paycheque entrepreneurship. Bug guts.</p>
+              <h1 id="introTitle">Whiskey Runner Rob</h1>
+              <p>
+                Rob has entered his post-paycheque entrepreneur era: more invoices, worse ideas, no visible boss,
+                and a motorcycle large enough to frighten a mailbox.
+              </p>
+              <p>
+                Unfortunately, Rob also invented a clear acrylic riding dome so his two parrots can sit on his shoulders
+                while he tears up and down the road like a man conducting very loud bird-based research.
+              </p>
+              <p>
+                This morning the dome is caked in dead bugs, road dust, and one suspicious smear Rob insists is
+                "probably blueberry." The parrots have filed a visual obstruction complaint by screaming directly into
+                his ears.
+              </p>
+              <p>
+                First job: get Rob out of the house, get him on the cruiser, ride north to MacLeod's Hardware-ish,
+                pick up acrylic dome polish, and bring it back to the garage before the birds learn stronger language.
+              </p>
+              <p>
+                Controls: move with WASD or arrows. Use E, Space, or Enter to interact. M opens the mission browser.
+                R drops the selected item. F uses it. Number keys pick inventory slots. Honking while moving is not
+                helpful, but it is emotionally available.
+              </p>
+              <p class="intro-signoff">
+                Good luck. Try not to polish the dome with the parrots still licking it.
+              </p>
+            </div>
+          </div>
+          <button id="introStart" class="intro-start" type="button" disabled>
+            Mandatory Reading In Progress
+          </button>
+        </div>
+      </section>
     </main>
     <script src="app.js"></script>
   </body>
