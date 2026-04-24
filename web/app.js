@@ -6,6 +6,7 @@
   const speedLabel = document.querySelector("#speedLabel");
   const placeLabel = document.querySelector("#placeLabel");
   const missionLabel = document.querySelector("#missionLabel");
+  const missionDockTitle = document.querySelector("#missionDockTitle");
   const inventoryLabel = document.querySelector("#inventoryLabel");
   const guideLabel = document.querySelector("#guideLabel");
   const toast = document.querySelector("#toast");
@@ -34,6 +35,8 @@
     y: drivewayY,
     heading: -Math.PI / 2,
     speed: 0,
+    fallen: false,
+    fallSide: 1,
   };
 
   const speedometerScale = 0.16;
@@ -46,6 +49,10 @@
     footSpeed: 148,
     walkTime: 0,
     isWalking: false,
+    panicUntil: 0,
+    panicVectorX: 0,
+    panicVectorY: 0,
+    lastPanicSayAt: 0,
   };
 
   const camera = {
@@ -216,10 +223,210 @@
     createWorldItem("domePolish", hardwareStore.counterX, hardwareStore.counterY, "hardware", "domePolishRun"),
   ];
 
+  const npcs = [
+    {
+      id: "mavis",
+      name: "Mavis",
+      baseX: -286,
+      baseY: -530,
+      x: -286,
+      y: -530,
+      radiusX: 36,
+      radiusY: 24,
+      phase: 0.4,
+      color: "#623f7f",
+      accent: "#ffdf9a",
+      skin: "#d79b72",
+      hat: "#f5e7b8",
+      talkIndex: 0,
+      bubbleText: "",
+      bubbleUntil: 0,
+      lines: [
+        "Tell your dome I can still see last Tuesday's bug on it.",
+        "If your parrots repeat what I said at bingo, I am suing the beak.",
+        "That motorcycle sounds like a chainsaw farting into a soup can.",
+      ],
+    },
+    {
+      id: "gord",
+      name: "Gord",
+      baseX: -265,
+      baseY: 960,
+      x: -265,
+      y: 960,
+      radiusX: 28,
+      radiusY: 18,
+      phase: 2.1,
+      color: "#2f5b7a",
+      accent: "#d8b35d",
+      skin: "#c88962",
+      hat: "#4c3528",
+      talkIndex: 0,
+      bubbleText: "",
+      bubbleUntil: 0,
+      lines: [
+        "Cash only. Also trades for batteries, lies, and tires with most of the tire left.",
+        "That model kit is rare because everyone with sense threw it out.",
+        "If it smells damp, that means it has character and probably mold.",
+      ],
+    },
+    {
+      id: "burt",
+      name: "Burt",
+      baseX: 325,
+      baseY: 742,
+      x: 325,
+      y: 742,
+      radiusX: 42,
+      radiusY: 22,
+      phase: 4.3,
+      color: "#5f7f36",
+      accent: "#2d3228",
+      skin: "#ce9067",
+      hat: "#cfd36b",
+      talkIndex: 0,
+      bubbleText: "",
+      bubbleUntil: 0,
+      lines: [
+        "If those are apology cigars, I want apology matches too.",
+        "My tractor is not a drunk fridge. It is a sober fridge with a difficult past.",
+        "Your dome has more polish budget than my wedding.",
+      ],
+    },
+    {
+      id: "darlene",
+      name: "Darlene",
+      baseX: -300,
+      baseY: 690,
+      x: -300,
+      y: 690,
+      radiusX: 32,
+      radiusY: 26,
+      phase: 5.6,
+      color: "#9c5846",
+      accent: "#f5d58c",
+      skin: "#d9a06f",
+      hat: "#355d57",
+      talkIndex: 0,
+      bubbleText: "",
+      bubbleUntil: 0,
+      lines: [
+        "Rob, your bike woke my bread dough, and now it has opinions.",
+        "One parrot called my casserole 'structural.' I want an apology.",
+        "If that dome fogs up again, just follow the smell of poor decisions home.",
+      ],
+    },
+  ];
+
+  const discoveries = [
+    {
+      id: "ditchCooler",
+      kind: "cooler",
+      x: -135,
+      y: -310,
+      label: "Ditch Cooler",
+      seen: false,
+      color: "#4b8ea8",
+      accent: "#f0f5d8",
+      text: "Rob opens the ditch cooler. It contains one warm ginger ale and a note that says 'not evidence.'",
+      repeatText: "The ditch cooler remains legally ambiguous and thermally disappointing.",
+    },
+    {
+      id: "mailboxManifesto",
+      kind: "sign",
+      x: -224,
+      y: 638,
+      label: "Mailbox Manifesto",
+      seen: false,
+      color: "#fff3b5",
+      accent: "#623723",
+      text: "A mailbox note reads: 'Stop revving at 7 AM unless you are delivering coffee or shame.'",
+      repeatText: "The mailbox has nothing new to say, which makes it the most mature person on the road.",
+    },
+    {
+      id: "bugSmear",
+      kind: "bucket",
+      x: -118,
+      y: 170,
+      label: "Bug Smear Bucket",
+      seen: false,
+      color: "#91b85e",
+      accent: "#432d24",
+      text: "Rob finds a bucket labelled 'premium bug slurry.' He decides this is either wax or a hate crime against windshields.",
+      repeatText: "The bug slurry still smells like a picnic lost a knife fight.",
+    },
+    {
+      id: "potatoWarning",
+      kind: "sign",
+      x: 138,
+      y: -1080,
+      label: "Potato Warning",
+      seen: false,
+      color: "#f8dda2",
+      accent: "#5a4326",
+      text: "A hand-painted sign reads: 'NO TRESPASSING. POTATOES ARE LISTENING.' Rob nods like this explains taxes.",
+      repeatText: "The potatoes continue listening. Rob lowers his voice around root vegetables.",
+    },
+  ];
+
+  const roadVehicles = [
+    {
+      kind: "pickup",
+      x: -32,
+      laneX: -32,
+      y: -1980,
+      baseSpeed: 108,
+      speed: 108,
+      color: "#a94d3c",
+      accent: "#f0d287",
+      length: 58,
+      alertUntil: 0,
+      lastQuipAt: 0,
+      quip: "A pickup rattles past with one heroic bungee cord doing the work of a whole engineering degree.",
+    },
+    {
+      kind: "tractor",
+      x: 34,
+      laneX: 34,
+      y: 1160,
+      baseSpeed: -46,
+      speed: -46,
+      color: "#6f943d",
+      accent: "#e5c95a",
+      length: 66,
+      alertUntil: 0,
+      lastQuipAt: 0,
+      quip: "A tractor crawls by at the official PEI speed of 'eventually.'",
+    },
+    {
+      kind: "van",
+      x: -28,
+      laneX: -28,
+      y: 420,
+      baseSpeed: 78,
+      speed: 78,
+      color: "#d7d9cf",
+      accent: "#3d728d",
+      length: 62,
+      alertUntil: 0,
+      lastQuipAt: 0,
+      quip: "A dented delivery van goes past smelling faintly of bait, coffee, and consequences.",
+    },
+  ];
+
+  const combines = [
+    { x: 230, y: -1610, minX: 205, maxX: 555, baseSpeed: 34, speed: 34, dir: 1, alertUntil: 0, color: "#d5a43c", accent: "#6b4427" },
+    { x: 245, y: 920, minX: 215, maxX: 565, baseSpeed: 27, speed: 27, dir: -1, alertUntil: 0, color: "#b7bd46", accent: "#4c5d2f" },
+  ];
+
   const trees = makeTrees();
   const laneMarks = makeLaneMarks();
   let gameStarted = false;
   let introReady = false;
+  let introSkipClicks = 0;
+  let introLastSkipClickAt = 0;
+  let introUnlockTimer = 0;
+  let introSkipResetTimer = 0;
   let lastTime = performance.now();
   let toastUntil = 0;
 
@@ -268,7 +475,10 @@
     if (!key) return;
     event.preventDefault();
     if (!gameStarted) {
-      if (introReady && key === "action") startGame();
+      if (key === "action") {
+        if (introReady) startGame();
+        else handleIntroImpatience();
+      }
       return;
     }
     if (key === "mission") {
@@ -310,16 +520,16 @@
     input[key] = false;
   });
 
-  introStart.addEventListener("click", startGame);
+  introStart.addEventListener("click", handleIntroStartClick);
   introScroll.addEventListener("animationend", unlockIntro, { once: true });
   missionButton.addEventListener("click", openMissionBrowser);
   missionClose.addEventListener("click", closeMissionBrowser);
 
   resize();
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.setTimeout(unlockIntro, 900);
+    introUnlockTimer = window.setTimeout(unlockIntro, 900);
   } else {
-    window.setTimeout(unlockIntro, 24500);
+    introUnlockTimer = window.setTimeout(unlockIntro, 24500);
   }
   requestAnimationFrame(loop);
 
@@ -331,11 +541,67 @@
     requestAnimationFrame(loop);
   }
 
-  function unlockIntro() {
+  function handleIntroStartClick() {
+    if (introReady) {
+      startGame();
+      return;
+    }
+
+    handleIntroImpatience();
+  }
+
+  function handleIntroImpatience() {
+    const now = performance.now();
+    introSkipClicks = now - introLastSkipClickAt < 1250 ? introSkipClicks + 1 : 1;
+    introLastSkipClickAt = now;
+    window.clearTimeout(introSkipResetTimer);
+    introSkipResetTimer = window.setTimeout(() => {
+      introSkipClicks = 0;
+    }, 1350);
+
+    jiggleIntroButton();
+    speedUpIntroScroll(introSkipClicks);
+
+    if (introSkipClicks >= 3) {
+      introScroll.classList.add("is-skipped");
+      introStart.textContent = "Fine. Start Rob's Day.";
+      say("Fine. Rob skims the paperwork like a man signing a waiver beside a running motorcycle.", 3);
+      unlockIntro({ skipped: true });
+      return;
+    }
+
+    introStart.textContent = introSkipClicks === 1
+      ? "Reading Inspector Says No"
+      : "Click Faster, Coward";
+    say(
+      introSkipClicks === 1
+        ? "The intro clears its throat and pretends this is legally binding."
+        : "The text speeds up. The lawyers are sweating.",
+      2.2,
+    );
+  }
+
+  function jiggleIntroButton() {
+    introStart.classList.remove("is-irritated");
+    void introStart.offsetWidth;
+    introStart.classList.add("is-irritated");
+  }
+
+  function speedUpIntroScroll(clicks) {
+    const animations = introScroll.getAnimations ? introScroll.getAnimations() : [];
+    const animation = animations[0];
+    if (animation && animation.playbackRate !== undefined) {
+      animation.updatePlaybackRate(Math.min(4, 1 + clicks * 0.85));
+    }
+  }
+
+  function unlockIntro(options = {}) {
     if (introReady) return;
+    window.clearTimeout(introUnlockTimer);
+    window.clearTimeout(introSkipResetTimer);
     introReady = true;
-    introStart.disabled = false;
-    introStart.textContent = "Start Rob's Day";
+    introStart.classList.remove("is-reading", "is-irritated");
+    introStart.textContent = options.skipped ? "Start Rob's Day, You Menace" : "Start Rob's Day";
     introStart.focus();
   }
 
@@ -418,6 +684,7 @@
     }
 
     handleInventoryShortcuts();
+    updateWorldLife(dt, now);
 
     if (rob.mode === "home") {
       bike.speed *= 0.9;
@@ -428,10 +695,10 @@
         say("Rob steps out. The parrots are already judging the dome polish.", 3.5);
       }
     } else if (rob.mode === "foot") {
-      updateOnFoot(dt);
+      updateOnFoot(dt, now);
       if (input.actionQueued) {
         const interacted = handleInteractionAction();
-        if (!interacted && distance(rob, bike) < 56) {
+        if (!interacted && !bike.fallen && distance(rob, bike) < 56) {
           rob.mode = "bike";
           bike.speed = 0;
           bike.heading = -Math.PI / 2;
@@ -446,7 +713,7 @@
       }
     } else {
       updateBike(dt);
-      if (input.actionQueued) {
+      if (rob.mode === "bike" && input.actionQueued) {
         if (Math.abs(bike.speed) < 34 && handleInteractionAction()) {
           bike.speed = 0;
         } else if (Math.abs(bike.speed) < 24) {
@@ -489,9 +756,21 @@
 
   function handleInteractionAction() {
     const actor = actorPoint();
+    if (rob.mode === "foot" && tryUprightBike(actor)) return true;
     if (tryDeliverActiveMission(actor)) return true;
     if (tryPickupNearbyItem(actor)) return true;
+    if (rob.mode === "foot" && tryTalkToNearbyNpc(actor)) return true;
+    if (rob.mode === "foot" && tryInspectNearbyDiscovery(actor)) return true;
     return false;
+  }
+
+  function tryUprightBike(actor) {
+    if (!bike.fallen || distance(actor, bike) > 78) return false;
+    bike.fallen = false;
+    bike.speed = 0;
+    playBikeLiftSound();
+    say("Rob heaves the Suzuki upright with the dignity of a man wrestling a vending machine.", 3.6);
+    return true;
   }
 
   function tryPickupNearbyItem(actor) {
@@ -516,6 +795,30 @@
 
     say(relatedMission ? relatedMission.pickupText : `Picked up ${itemTypes[item.type].name}.`, 3.5);
 
+    return true;
+  }
+
+  function tryTalkToNearbyNpc(actor) {
+    const npc = nearestNpc(actor, 70);
+    if (!npc) return false;
+
+    const line = npc.lines[npc.talkIndex % npc.lines.length];
+    npc.talkIndex += 1;
+    npc.bubbleText = line;
+    npc.bubbleUntil = performance.now() + 3600;
+    playUseSound();
+    say(`${npc.name}: "${line}"`, 4.2);
+    return true;
+  }
+
+  function tryInspectNearbyDiscovery(actor) {
+    const discovery = nearestDiscovery(actor, 66);
+    if (!discovery) return false;
+
+    const firstLook = !discovery.seen;
+    discovery.seen = true;
+    playUseSound();
+    say(firstLook ? `Discovered ${discovery.label}: ${discovery.text}` : discovery.repeatText, firstLook ? 4.8 : 3.3);
     return true;
   }
 
@@ -610,6 +913,32 @@
     return nearest;
   }
 
+  function nearestNpc(actor, radius) {
+    let nearest = null;
+    let nearestDistance = radius;
+    for (const npc of npcs) {
+      const npcDistance = distance(actor, npc);
+      if (npcDistance < nearestDistance) {
+        nearest = npc;
+        nearestDistance = npcDistance;
+      }
+    }
+    return nearest;
+  }
+
+  function nearestDiscovery(actor, radius) {
+    let nearest = null;
+    let nearestDistance = radius;
+    for (const discovery of discoveries) {
+      const discoveryDistance = distance(actor, discovery);
+      if (discoveryDistance < nearestDistance) {
+        nearest = discovery;
+        nearestDistance = discoveryDistance;
+      }
+    }
+    return nearest;
+  }
+
   function hasItem(type) {
     return inventory.slots.includes(type);
   }
@@ -688,6 +1017,41 @@
     if (state.state === "return" && !hasItem(def.item)) return `Pick ${itemTypes[def.item].shortName} back up. Rob cannot deliver a memory.`;
     if (state.state === "return") return def.returnGuide;
     return def.pickupGuide;
+  }
+
+  function currentGuideText() {
+    if (!gameStarted) return "Read the intro";
+    const context = nearbyInteractionGuide();
+    return context ? `${context} ${missionGuideText()}` : missionGuideText();
+  }
+
+  function nearbyInteractionGuide() {
+    const actor = actorPoint();
+    if (rob.mode === "foot") {
+      if (rob.panicUntil > performance.now()) return "Rob is moving himself out of traffic before his obituary becomes a roadside anecdote.";
+      if (canDeliverActiveMission(actor)) return "Drop-off is right here.";
+
+      const item = nearestWorldItem(actor, 74);
+      if (item) return `Pickup nearby: ${itemTypes[item.type].name}.`;
+
+      const npc = nearestNpc(actor, 70);
+      if (npc) return `Nearby: talk to ${npc.name}; they look under-caffeinated and over-informed.`;
+
+      const discovery = nearestDiscovery(actor, 66);
+      if (discovery) return discovery.seen ? `Nearby: re-inspect ${discovery.label}.` : `Nearby: inspect ${discovery.label}.`;
+
+      if (bike.fallen && distance(rob, bike) < 92) return "The Suzuki is lying down like a tired vending machine. Press E to stand it back up.";
+      if (distance(rob, bike) < 72) return "The cruiser is within climbing distance.";
+      if (distance(rob, homeDoor) < 64) return "The front door is close if Rob needs to retreat from consequences.";
+    }
+
+    if (rob.mode === "bike" && Math.abs(bike.speed) < 34) {
+      if (canDeliverActiveMission(actor)) return "The drop-off is close enough for Rob to make it official.";
+      const item = nearestWorldItem(actor, 74);
+      if (item) return `Cargo is close: ${itemTypes[item.type].name}.`;
+    }
+
+    return "";
   }
 
   function missionCardStatus(missionId) {
@@ -850,6 +1214,16 @@
     playTone({ frequency: 92, slideTo: 44, duration: 0.22, type: "triangle", gain: 0.04 });
   }
 
+  function playCrashSound() {
+    playTone({ frequency: 92, slideTo: 44, duration: 0.28, type: "sawtooth", gain: 0.09 });
+    window.setTimeout(() => playTone({ frequency: 168, slideTo: 74, duration: 0.18, type: "square", gain: 0.06 }), 90);
+  }
+
+  function playBikeLiftSound() {
+    playTone({ frequency: 84, slideTo: 132, duration: 0.22, type: "triangle", gain: 0.055 });
+    window.setTimeout(() => playTone({ frequency: 190, duration: 0.08, type: "sine", gain: 0.035 }), 180);
+  }
+
   function playPickupSound() {
     playTone({ frequency: 520, slideTo: 760, duration: 0.14, type: "triangle", gain: 0.055 });
     window.setTimeout(() => playTone({ frequency: 880, duration: 0.08, type: "sine", gain: 0.04 }), 85);
@@ -875,7 +1249,218 @@
     window.setTimeout(() => playTone({ frequency: base * 0.8, slideTo: base * 1.1, duration: 0.06, type: "sine", gain: 0.02 }), 90);
   }
 
-  function updateOnFoot(dt) {
+  function updateWorldLife(dt, now) {
+    for (const npc of npcs) {
+      const driftX = Math.sin(now / 1700 + npc.phase) * npc.radiusX;
+      const driftY = Math.cos(now / 2100 + npc.phase * 1.7) * npc.radiusY;
+      npc.x += (npc.baseX + driftX - npc.x) * Math.min(1, dt * 1.8);
+      npc.y += (npc.baseY + driftY - npc.y) * Math.min(1, dt * 1.8);
+    }
+
+    for (const vehicle of roadVehicles) {
+      updateRoadVehicle(vehicle, dt, now);
+
+      if (rob.mode === "bike" && now > toastUntil && now - vehicle.lastQuipAt > 9000 && distance(bike, vehicle) < 94) {
+        vehicle.lastQuipAt = now;
+        say(vehicle.quip, 2.8);
+      }
+    }
+
+    for (const combine of combines) {
+      updateCombine(combine, dt, now);
+    }
+  }
+
+  function updateRoadVehicle(vehicle, dt, now) {
+    const dir = signNonZero(vehicle.baseSpeed);
+    const threat = nearestRoadThreat(vehicle, dir);
+    const roadLeft = world.roadX - world.roadWidth / 2;
+    const roadRight = world.roadX + world.roadWidth / 2;
+    let targetX = vehicle.laneX;
+    let targetSpeed = vehicle.baseSpeed;
+
+    if (threat) {
+      const ahead = dir * (threat.y - vehicle.y);
+      const dx = threat.x - vehicle.x;
+      const urgency = clamp((230 - ahead) / 230, 0, 1) * clamp((100 - Math.abs(dx)) / 100, 0, 1);
+      const avoidSide = dx <= 0 ? 1 : -1;
+      targetX = clamp(vehicle.laneX + avoidSide * (44 + urgency * 44), roadLeft - 18, roadRight + 18);
+      targetSpeed = vehicle.baseSpeed * (ahead < 92 && Math.abs(dx) < 58 ? 0.04 : 0.35 + (1 - urgency) * 0.35);
+      vehicle.alertUntil = now + 420;
+
+      if (threat.kind === "robFoot" && ahead < 155 && Math.abs(dx) < 76) {
+        triggerFootDodge(vehicle, dt, now);
+      }
+    }
+
+    vehicle.speed += (targetSpeed - vehicle.speed) * Math.min(1, dt * 4);
+    vehicle.x += (targetX - vehicle.x) * Math.min(1, dt * 5.5);
+    vehicle.y += vehicle.speed * dt;
+
+    if (dir > 0 && vehicle.y > world.maxY + 180) {
+      vehicle.y = world.minY - 180;
+      vehicle.x = vehicle.laneX;
+      vehicle.speed = vehicle.baseSpeed;
+    }
+    if (dir < 0 && vehicle.y < world.minY - 180) {
+      vehicle.y = world.maxY + 180;
+      vehicle.x = vehicle.laneX;
+      vehicle.speed = vehicle.baseSpeed;
+    }
+  }
+
+  function updateCombine(combine, dt, now) {
+    const threat = nearestCombineThreat(combine);
+    const targetSpeed = threat ? 0 : combine.baseSpeed;
+    combine.speed += (targetSpeed - combine.speed) * Math.min(1, dt * (threat ? 5 : 1.6));
+    if (threat) {
+      combine.alertUntil = now + 400;
+      if (threat.kind === "robFoot" && distance(rob, combine) < 92) {
+        triggerFootDodge(combine, dt, now);
+      }
+    }
+
+    combine.x += combine.speed * combine.dir * dt;
+      if (combine.x > combine.maxX) {
+        combine.x = combine.maxX;
+        combine.dir = -1;
+      } else if (combine.x < combine.minX) {
+        combine.x = combine.minX;
+        combine.dir = 1;
+      }
+  }
+
+  function nearestRoadThreat(vehicle, dir) {
+    const candidates = [];
+    if (rob.mode === "foot") {
+      candidates.push({ kind: "robFoot", x: rob.x, y: rob.y });
+    } else if (rob.mode === "bike" && !bike.fallen) {
+      candidates.push({ kind: "robBike", x: bike.x, y: bike.y });
+    }
+
+    if (bike.fallen) {
+      candidates.push({ kind: "fallenBike", x: bike.x, y: bike.y });
+    }
+
+    let nearest = null;
+    let nearestAhead = Infinity;
+    for (const candidate of candidates) {
+      const ahead = dir * (candidate.y - vehicle.y);
+      const lateral = Math.abs(candidate.x - vehicle.x);
+      if (ahead < -36 || ahead > 245 || lateral > 115) continue;
+      const surface = surfaceAt(candidate.x, candidate.y);
+      if (surface !== "road" && surface !== "driveway") continue;
+      if (ahead < nearestAhead) {
+        nearest = candidate;
+        nearestAhead = ahead;
+      }
+    }
+    return nearest;
+  }
+
+  function nearestCombineThreat(combine) {
+    const candidates = [];
+    if (rob.mode === "foot") candidates.push({ kind: "robFoot", x: rob.x, y: rob.y });
+    if (rob.mode === "bike" && !bike.fallen) candidates.push({ kind: "robBike", x: bike.x, y: bike.y });
+
+    let nearest = null;
+    let nearestDistance = 125;
+    for (const candidate of candidates) {
+      if (surfaceAt(candidate.x, candidate.y) !== "farm") continue;
+      const candidateDistance = distance(candidate, combine);
+      if (candidateDistance < nearestDistance) {
+        nearest = candidate;
+        nearestDistance = candidateDistance;
+      }
+    }
+    return nearest;
+  }
+
+  function triggerFootDodge(vehicle, dt, now) {
+    if (rob.mode !== "foot") return;
+    const roadLeft = world.roadX - world.roadWidth / 2;
+    const roadRight = world.roadX + world.roadWidth / 2;
+    let side = rob.x < world.roadX ? -1 : 1;
+    if (rob.x > roadLeft - 26 && rob.x < roadRight + 26) {
+      side = rob.x < world.roadX ? -1 : 1;
+      if (Math.abs(rob.x - world.roadX) < 18) side = vehicle.x <= world.roadX ? 1 : -1;
+    } else if (vehicle.x < rob.x) {
+      side = 1;
+    } else {
+      side = -1;
+    }
+
+    const dir = vehicle.dir ? vehicle.dir : signNonZero(vehicle.baseSpeed || 1);
+    const vx = side;
+    const vy = dir * 0.16;
+    const mag = Math.hypot(vx, vy) || 1;
+    rob.panicVectorX = vx / mag;
+    rob.panicVectorY = vy / mag;
+    rob.panicUntil = Math.max(rob.panicUntil, now + 760);
+
+    if (now - rob.lastPanicSayAt > 2600) {
+      rob.lastPanicSayAt = now;
+      say("Rob panic-shuffles out of traffic with all the grace of a man who just remembered physics.", 2.6);
+    }
+
+    rob.x += rob.panicVectorX * rob.footSpeed * 2.2 * dt;
+    rob.y += rob.panicVectorY * rob.footSpeed * 2.2 * dt;
+    constrainPoint(rob, 12);
+  }
+
+  function checkBikeImpact(now) {
+    if (rob.mode !== "bike" || bike.fallen) return;
+
+    for (const vehicle of roadVehicles) {
+      if (!isVehicleCollision(bike, vehicle, 42, 35)) continue;
+      vehicle.speed *= 0.12;
+      vehicle.alertUntil = now + 1100;
+      fallBike(vehicle, "Rob clips traffic and the Suzuki flops over like an expensive bad decision.", now);
+      return;
+    }
+
+    for (const combine of combines) {
+      if (!isVehicleCollision(bike, combine, 52, 42)) continue;
+      combine.speed = 0;
+      combine.alertUntil = now + 1100;
+      fallBike(combine, "Rob introduces the cruiser to farm machinery. The machinery wins on paperwork alone.", now);
+      return;
+    }
+  }
+
+  function fallBike(obstacle, text, now) {
+    bike.fallen = true;
+    bike.fallSide = bike.x >= obstacle.x ? 1 : -1;
+    bike.speed = 0;
+    rob.mode = "foot";
+    rob.x = bike.x + bike.fallSide * 46;
+    rob.y = bike.y + signNonZero(bike.y - obstacle.y) * 24;
+    rob.heading = Math.atan2(rob.y - bike.y, rob.x - bike.x);
+    rob.panicVectorX = bike.fallSide;
+    rob.panicVectorY = 0.2;
+    rob.panicUntil = now + 520;
+    clearMovementInput();
+    constrainPoint(rob, 12);
+    playCrashSound();
+    say(`${text} Press E beside the bike to stand it back up.`, 4.2);
+  }
+
+  function isVehicleCollision(a, b, width, height) {
+    return Math.abs(a.x - b.x) < width && Math.abs(a.y - b.y) < height;
+  }
+
+  function updateOnFoot(dt, now) {
+    if (rob.panicUntil > now) {
+      const speed = rob.footSpeed * 1.95;
+      rob.x += rob.panicVectorX * speed * dt;
+      rob.y += rob.panicVectorY * speed * dt;
+      rob.heading = Math.atan2(rob.panicVectorY, rob.panicVectorX);
+      rob.isWalking = true;
+      rob.walkTime += dt * 17;
+      constrainPoint(rob, 12);
+      return;
+    }
+
     const xAxis = Number(input.right) - Number(input.left);
     const yAxis = Number(input.down) - Number(input.up);
     const mag = Math.hypot(xAxis, yAxis);
@@ -893,6 +1478,11 @@
   }
 
   function updateBike(dt) {
+    if (bike.fallen) {
+      bike.speed = 0;
+      return;
+    }
+
     const throttle = Number(input.up) - Number(input.down);
     const steering = Number(input.right) - Number(input.left);
     const surface = surfaceAt(bike.x, bike.y);
@@ -925,6 +1515,8 @@
       bike.speed *= -0.15;
       say("The river bank votes no.", 1.7);
     }
+
+    checkBikeImpact(performance.now());
   }
 
   function updateCamera(dt) {
@@ -940,7 +1532,7 @@
       speedLabel.textContent = "0 km/h";
       placeLabel.textContent = "Rob's house";
     } else if (rob.mode === "foot") {
-      modeLabel.textContent = distance(rob, bike) < 56 ? "By the bike" : "On foot";
+      modeLabel.textContent = bike.fallen && distance(rob, bike) < 84 ? "Bike down" : distance(rob, bike) < 56 ? "By the bike" : "On foot";
       speedLabel.textContent = "0 km/h";
       placeLabel.textContent = placeName(rob.x, rob.y);
     } else {
@@ -950,8 +1542,9 @@
     }
 
     missionLabel.textContent = missionStatusText();
+    missionDockTitle.textContent = missionStatusText();
     inventoryLabel.textContent = inventoryText();
-    guideLabel.textContent = gameStarted ? missionGuideText() : "Read the intro";
+    guideLabel.textContent = currentGuideText();
 
     if (toastUntil && now > toastUntil) {
       toast.hidden = true;
@@ -968,12 +1561,16 @@
     drawFields();
     drawRoad();
     drawDriveways();
+    drawRoadVehicles(now);
     drawHardwareStore();
     drawYardSale();
     drawHouses();
     drawTrees();
     drawFarmDetails();
+    drawCombines(now);
     drawTractorShed();
+    drawDiscoveries(now);
+    drawNpcs(now);
     drawWorldItems(now);
     drawMissionMarkers(now);
     drawBikeAndRob(now);
@@ -1114,6 +1711,333 @@
     drawFence(116, world.minY, world.maxY);
   }
 
+  function drawRoadVehicles(now) {
+    for (const vehicle of roadVehicles) {
+      const sx = screenX(vehicle.x);
+      const sy = screenY(vehicle.y);
+      if (sx < -90 || sx > canvas.clientWidth + 90 || sy < -110 || sy > canvas.clientHeight + 110) continue;
+      drawRoadVehicle(vehicle, now);
+    }
+  }
+
+  function drawRoadVehicle(vehicle, now) {
+    const sx = screenX(vehicle.x);
+    const sy = screenY(vehicle.y);
+    const heading = vehicle.baseSpeed >= 0 ? Math.PI / 2 : -Math.PI / 2;
+    const swerve = clamp((vehicle.x - vehicle.laneX) / 90, -0.28, 0.28) * signNonZero(vehicle.baseSpeed);
+    const wobble = Math.sin(now / 180 + vehicle.y * 0.02) * 1.2;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(heading + swerve);
+
+    ctx.fillStyle = "rgba(28, 28, 25, 0.26)";
+    ctx.beginPath();
+    ctx.ellipse(0, 10, vehicle.length * 0.58, 17, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (vehicle.kind === "tractor") {
+      ctx.fillStyle = vehicle.color;
+      ctx.beginPath();
+      ctx.roundRect(-24, -16, 48, 32, 7);
+      ctx.fill();
+      ctx.fillStyle = vehicle.accent;
+      ctx.fillRect(2, -22, 22, 18);
+      ctx.fillStyle = "#1e221d";
+      ctx.beginPath();
+      ctx.arc(-23, -17, 9 + Math.sin(now / 140) * 0.5, 0, Math.PI * 2);
+      ctx.arc(-23, 17, 9 + Math.sin(now / 140) * 0.5, 0, Math.PI * 2);
+      ctx.arc(22, -18, 13, 0, Math.PI * 2);
+      ctx.arc(22, 18, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 233, 142, 0.72)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(24, -9);
+      ctx.lineTo(38, -12 + wobble);
+      ctx.moveTo(24, 9);
+      ctx.lineTo(38, 12 - wobble);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = vehicle.color;
+      ctx.beginPath();
+      ctx.roundRect(-vehicle.length / 2, -16, vehicle.length, 32, 7);
+      ctx.fill();
+      ctx.fillStyle = vehicle.accent;
+      ctx.beginPath();
+      ctx.roundRect(2, -13, vehicle.length * 0.32, 26, 5);
+      ctx.fill();
+      ctx.fillStyle = "#1b1f21";
+      ctx.beginPath();
+      ctx.ellipse(-vehicle.length * 0.32, -17, 8, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(vehicle.length * 0.32, -17, 8, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(-vehicle.length * 0.32, 17, 8, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(vehicle.length * 0.32, 17, 8, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (vehicle.kind === "pickup") {
+        ctx.fillStyle = "rgba(80, 45, 31, 0.62)";
+        ctx.fillRect(-vehicle.length / 2 + 7, -12, 20, 24);
+      }
+    }
+
+    ctx.restore();
+
+    if (vehicle.alertUntil > now) {
+      drawAlertMark(vehicle.x, vehicle.y - 42, now);
+    }
+  }
+
+  function drawAlertMark(wx, wy, now) {
+    const sx = screenX(wx);
+    const sy = screenY(wy) + Math.sin(now / 90) * 2;
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 227, 140, 0.92)";
+    ctx.strokeStyle = "rgba(34, 35, 27, 0.82)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(sx - 10, sy - 16, 20, 28, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#2d2519";
+    ctx.font = "900 18px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("!", sx, sy - 2);
+    ctx.restore();
+  }
+
+  function drawCombines(now) {
+    for (const combine of combines) {
+      const sx = screenX(combine.x);
+      const sy = screenY(combine.y);
+      if (sx < -100 || sx > canvas.clientWidth + 100 || sy < -90 || sy > canvas.clientHeight + 90) continue;
+      drawCombine(combine, now);
+    }
+  }
+
+  function drawCombine(combine, now) {
+    const sx = screenX(combine.x);
+    const sy = screenY(combine.y + Math.sin(now / 360) * 3);
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.scale(combine.dir, 1);
+
+    ctx.fillStyle = "rgba(36, 33, 26, 0.25)";
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 56, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = combine.color;
+    ctx.beginPath();
+    ctx.roundRect(-30, -16, 58, 32, 7);
+    ctx.fill();
+    ctx.fillStyle = combine.accent;
+    ctx.fillRect(2, -25, 24, 20);
+    ctx.fillStyle = "rgba(209, 235, 255, 0.72)";
+    ctx.fillRect(7, -21, 14, 10);
+
+    ctx.fillStyle = "#2a2c24";
+    ctx.beginPath();
+    ctx.arc(-18, 18, 11, 0, Math.PI * 2);
+    ctx.arc(24, 18, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#d9be58";
+    ctx.beginPath();
+    ctx.arc(-18, 18, 4, 0, Math.PI * 2);
+    ctx.arc(24, 18, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#5a3b25";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-42, -8);
+    ctx.lineTo(-62, -14);
+    ctx.moveTo(-42, 0);
+    ctx.lineTo(-66, 3);
+    ctx.moveTo(-42, 8);
+    ctx.lineTo(-62, 16);
+    ctx.stroke();
+    ctx.restore();
+
+    if (combine.alertUntil > now) {
+      drawAlertMark(combine.x, combine.y - 42, now);
+    }
+  }
+
+  function drawDiscoveries(now) {
+    for (const discovery of discoveries) {
+      const sx = screenX(discovery.x);
+      const sy = screenY(discovery.y);
+      if (sx < -70 || sx > canvas.clientWidth + 70 || sy < -80 || sy > canvas.clientHeight + 80) continue;
+      drawDiscovery(discovery, now);
+    }
+  }
+
+  function drawDiscovery(discovery, now) {
+    const sx = screenX(discovery.x);
+    const sy = screenY(discovery.y);
+
+    ctx.save();
+    if (!discovery.seen) {
+      const pulse = 1 + Math.sin(now / 260) * 0.08;
+      ctx.strokeStyle = "rgba(255, 238, 156, 0.62)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 14, 26 * pulse, 12 * pulse, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(35, 35, 28, 0.22)";
+    ctx.beginPath();
+    ctx.ellipse(sx + 3, sy + 18, 24, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (discovery.kind === "sign") {
+      ctx.strokeStyle = "#5a3a25";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy + 8);
+      ctx.lineTo(sx, sy + 35);
+      ctx.stroke();
+      ctx.fillStyle = discovery.color;
+      ctx.strokeStyle = discovery.accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(sx - 26, sy - 15, 52, 28, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = discovery.accent;
+      ctx.font = "800 9px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(discovery.seen ? "READ" : "???", sx, sy);
+    } else if (discovery.kind === "cooler") {
+      ctx.fillStyle = discovery.color;
+      ctx.beginPath();
+      ctx.roundRect(sx - 24, sy - 8, 48, 24, 5);
+      ctx.fill();
+      ctx.fillStyle = discovery.accent;
+      ctx.fillRect(sx - 20, sy - 14, 40, 8);
+      ctx.fillStyle = "#2d454c";
+      ctx.fillRect(sx - 6, sy - 16, 12, 5);
+    } else {
+      ctx.fillStyle = discovery.color;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy + 4, 20, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = discovery.accent;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, 16, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawNpcs(now) {
+    for (const npc of npcs) {
+      const sx = screenX(npc.x);
+      const sy = screenY(npc.y);
+      if (sx < -70 || sx > canvas.clientWidth + 70 || sy < -100 || sy > canvas.clientHeight + 100) continue;
+      drawNpc(npc, now);
+      if (npc.bubbleUntil > now && npc.bubbleText) {
+        drawSpeechBubble(npc.x, npc.y - 58, npc.bubbleText);
+      }
+    }
+  }
+
+  function drawNpc(npc, now) {
+    const sx = screenX(npc.x);
+    const sy = screenY(npc.y);
+    const stride = Math.sin(now / 250 + npc.phase) * 2.6;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(30, 35, 28, 0.23)";
+    ctx.beginPath();
+    ctx.ellipse(sx + 2, sy + 17, 16, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#22251f";
+    ctx.lineCap = "round";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(sx - 4, sy + 8);
+    ctx.lineTo(sx - 8 + stride, sy + 18);
+    ctx.moveTo(sx + 4, sy + 8);
+    ctx.lineTo(sx + 8 - stride, sy + 18);
+    ctx.stroke();
+
+    ctx.fillStyle = npc.color;
+    ctx.beginPath();
+    ctx.roundRect(sx - 9, sy - 7, 18, 20, 5);
+    ctx.fill();
+    ctx.fillStyle = npc.accent;
+    ctx.fillRect(sx - 7, sy - 4, 14, 4);
+    ctx.fillStyle = npc.skin;
+    ctx.beginPath();
+    ctx.arc(sx, sy - 16, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = npc.hat;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy - 23, 11, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(sx - 7, sy - 28, 14, 7);
+    ctx.restore();
+  }
+
+  function drawSpeechBubble(wx, wy, text) {
+    const sx = screenX(wx);
+    const sy = screenY(wy);
+    ctx.save();
+    ctx.font = "700 11px system-ui, sans-serif";
+    const lines = wrapText(text, 172, 3);
+    const width = Math.min(196, Math.max(96, ...lines.map((line) => ctx.measureText(line).width + 18)));
+    const height = lines.length * 14 + 13;
+    const x = clamp(sx - width / 2, 8, canvas.clientWidth - width - 8);
+    const y = clamp(sy - height, 72, canvas.clientHeight - height - 140);
+
+    ctx.fillStyle = "rgba(27, 38, 34, 0.88)";
+    ctx.strokeStyle = "rgba(255, 249, 223, 0.72)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff6bf";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    lines.forEach((line, index) => {
+      ctx.fillText(line, x + 9, y + 7 + index * 14);
+    });
+    ctx.restore();
+  }
+
+  function wrapText(text, maxWidth, maxLines) {
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+
+    for (const word of words) {
+      const next = line ? `${line} ${word}` : word;
+      if (ctx.measureText(next).width <= maxWidth) {
+        line = next;
+        continue;
+      }
+
+      if (line) lines.push(line);
+      line = word;
+
+      if (lines.length === maxLines - 1) break;
+    }
+
+    if (line && lines.length < maxLines) lines.push(line);
+    const usedWords = lines.join(" ").split(" ").filter(Boolean).length;
+    if (usedWords < words.length && lines.length) {
+      lines[lines.length - 1] = `${lines[lines.length - 1].replace(/\.*$/, "")}...`;
+    }
+    return lines;
+  }
+
   function drawTrees() {
     for (const tree of trees) {
       const sx = screenX(tree.x);
@@ -1155,6 +2079,11 @@
     }
 
     const actor = actorPoint();
+    if (rob.mode === "foot" && bike.fallen && distance(rob, bike) < 84) {
+      drawPrompt(bike.x, bike.y - 54, "E", now);
+      return;
+    }
+
     const nearbyItem = nearestWorldItem(actor, 74);
     if (nearbyItem && (rob.mode !== "bike" || Math.abs(bike.speed) < 34)) {
       drawPrompt(nearbyItem.x, nearbyItem.y - 42, "E", now);
@@ -1165,6 +2094,20 @@
       const target = activeMissionDef().drop;
       drawPrompt(target.x, target.y - 50, "E", now);
       return;
+    }
+
+    if (rob.mode === "foot") {
+      const npc = nearestNpc(rob, 70);
+      if (npc) {
+        drawPrompt(npc.x, npc.y - 42, "E", now);
+        return;
+      }
+
+      const discovery = nearestDiscovery(rob, 66);
+      if (discovery) {
+        drawPrompt(discovery.x, discovery.y - 42, "E", now);
+        return;
+      }
     }
 
     if (rob.mode === "foot" && distance(rob, bike) < 72) {
@@ -1466,14 +2409,19 @@
     const sx = screenX(wx);
     const sy = screenY(wy);
     const wobble = mounted ? Math.sin(now / 120) * clamp(Math.abs(bike.speed) / 250, 0, 1) : 0;
+    const fallen = bike.fallen && !mounted;
 
     ctx.save();
     ctx.translate(sx, sy);
     ctx.rotate(heading + wobble * 0.035);
+    if (fallen) {
+      ctx.rotate((bike.fallSide || 1) * 0.48);
+      ctx.scale(1, 0.72);
+    }
 
     ctx.fillStyle = "rgba(28, 28, 25, 0.3)";
     ctx.beginPath();
-    ctx.ellipse(0, 8, 46, 15, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, fallen ? 13 : 8, fallen ? 52 : 46, fallen ? 12 : 15, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = "#171a1e";
@@ -1507,6 +2455,17 @@
     }
 
     ctx.restore();
+
+    if (fallen) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 245, 185, 0.58)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sx + 40 * bike.fallSide, sy - 16, 9, 0.2, 1.8);
+      ctx.arc(sx + 54 * bike.fallSide, sy - 24, 7, 0.2, 1.8);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   function drawMountedRob(now) {
@@ -1572,7 +2531,7 @@
 
     ctx.save();
     ctx.translate(sx, sy - bob);
-    ctx.rotate(heading || -Math.PI / 2);
+    applyRobFacingTransform(heading);
     ctx.fillStyle = "rgba(30, 35, 28, 0.24)";
     ctx.beginPath();
     ctx.ellipse(0, 10 + bob, 16, 7, 0, 0, Math.PI * 2);
@@ -1620,6 +2579,17 @@
     ctx.arc(13, 0, 4.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+
+  function applyRobFacingTransform(heading) {
+    const safeHeading = Number.isFinite(heading) ? heading : -Math.PI / 2;
+    const normalized = normalizeAngle(safeHeading);
+    const dueWest = Math.abs(Math.abs(normalized) - Math.PI) < 0.001;
+    if (dueWest) {
+      ctx.scale(-1, 1);
+      return;
+    }
+    ctx.rotate(normalized);
   }
 
   function drawPrompt(wx, wy, label, now) {
@@ -1822,6 +2792,14 @@
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  function signNonZero(value) {
+    return value < 0 ? -1 : 1;
+  }
+
+  function normalizeAngle(angle) {
+    return Math.atan2(Math.sin(angle), Math.cos(angle));
   }
 
   function say(text, seconds) {

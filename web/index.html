@@ -30,11 +30,14 @@
           <span>Inventory</span>
           <strong id="inventoryLabel">Empty</strong>
         </div>
-        <div class="hud-meter hud-guide">
-          <span>Guide</span>
-          <strong id="guideLabel">Read the intro</strong>
-        </div>
         <button id="missionButton" class="hud-button" type="button">Missions</button>
+      </section>
+      <section class="mission-dock" aria-live="polite">
+        <div>
+          <span class="eyebrow">Current Errand</span>
+          <strong id="missionDockTitle">Dome Polish Run</strong>
+          <p id="guideLabel">Read the intro</p>
+        </div>
       </section>
       <div id="toast" class="toast" hidden></div>
       <section id="missionOverlay" class="mission-overlay" aria-labelledby="missionTitle" hidden>
@@ -74,16 +77,17 @@
                 pick up acrylic dome polish, and bring it back to the garage before the birds learn stronger language.
               </p>
               <p>
-                Controls: move with WASD or arrows. Use E, Space, or Enter to interact. M opens the mission browser.
-                R drops the selected item. F uses it. Number keys pick inventory slots. Honking while moving is not
-                helpful, but it is emotionally available.
+                Controls: move with WASD or arrows. Use E, Space, or Enter to interact, mount, dismount, or pick the
+                bike up after Rob loses a disagreement with traffic. M opens the mission browser. R drops the selected
+                item. F uses it. Number keys pick inventory slots. Honking while moving is not helpful, but it is
+                emotionally available.
               </p>
               <p class="intro-signoff">
                 Good luck. Try not to polish the dome with the parrots still licking it.
               </p>
             </div>
           </div>
-          <button id="introStart" class="intro-start" type="button" disabled>
+          <button id="introStart" class="intro-start is-reading" type="button">
             Mandatory Reading In Progress
           </button>
         </div>

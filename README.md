@@ -26,9 +26,12 @@ Controls:
 - Mounted Rob includes the clear acrylic dome and two parrots.
 - The first mission sends Rob to the local hardware store for acrylic dome polish, then back to his garage to clean bug splatter off the parrot dome.
 - Finishing the dome polish run unlocks two follow-up errands: a damp model-kit rescue and apology cigars for a tractor-owning neighbour.
-- The mission browser lets Rob switch the active errand, and the guide HUD/target marker points toward the next pickup or drop-off.
+- The mission browser lets Rob switch the active errand, while the bottom mission dock gives wrapped guidance for the next pickup, drop-off, or nearby interaction.
 - Rob has a small inventory and can pick up, drop, select, and use carried items.
 - Rob has a more natural on-foot walk cycle with alternating arm/leg swing and a bit of body bob.
+- Rob can talk to roadside neighbours and inspect small Easter eggs while walking around.
+- Traffic, tractors, delivery vans, and working combines add a little motion and roadside life.
+- Road vehicles now brake and steer around Rob; on-foot Rob panic-hops out of danger, and bike impacts can knock the cruiser down until Rob picks it back up.
 - Procedural sound effects provide ambient countryside noise, bird chirps, motorcycle engine rumble, horn, and inventory/mission feedback.
 
 ## Design Notes

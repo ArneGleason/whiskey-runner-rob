@@ -572,7 +572,13 @@ Current playable scope:
 - First mission: fetch acrylic dome polish from MacLeod's Hardware-ish and bring it back to Rob's garage.
 - Completing the first mission unlocks two branch missions: Model Kit Hostage Situation and Apology Cigars for Burt.
 - A mission browser lets the player switch the active errand.
-- The HUD guide and target marker point toward the current mission pickup, dropped mission item, or delivery point.
+- A bottom mission dock provides wrapped guidance for the current mission and nearby walk-around interactions.
+- The target marker points toward the current mission pickup, dropped mission item, or delivery point.
+- On-foot Rob can talk to nearby neighbours and inspect small roadside Easter eggs.
+- Moving pickup trucks, tractors, delivery vans, and field combines add early ambient life to the road slice.
+- Road vehicles detect Rob, brake, and steer toward the shoulder to avoid him.
+- On-foot Rob automatically panic-dodges out of the way when traffic or field equipment gets too close.
+- Motorcycle impacts can knock the cruiser down; Rob must dismount, stand beside it, and press `E` to pick it back up.
 - Rob's on-foot walk cycle has alternating leg/arm swing and body bob.
 - Procedural sound effects add ambience, birds, motorcycle engine rumble, horn, and inventory/mission cues.
 - The speedometer displays a scaled rural-road `km/h` value instead of raw world units.

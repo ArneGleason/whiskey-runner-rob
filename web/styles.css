@@ -38,11 +38,12 @@ body {
 .hud {
   position: fixed;
   top: 16px;
+  right: 16px;
   left: 16px;
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: 10px;
-  max-width: calc(100vw - 32px);
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
@@ -52,17 +53,14 @@ body {
 }
 
 .hud > div {
+  flex: 0 1 auto;
   min-width: 112px;
   padding: 3px 8px;
 }
 
 .hud .hud-wide {
-  min-width: 178px;
-}
-
-.hud .hud-guide {
-  min-width: 260px;
-  max-width: 360px;
+  min-width: 166px;
+  max-width: 260px;
 }
 
 .hud-button {
@@ -97,16 +95,51 @@ body {
 
 .hud strong {
   display: block;
+  max-width: 260px;
+  overflow: hidden;
   color: #fff9df;
   font-size: 0.95rem;
   line-height: 1.15;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mission-dock {
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  left: 16px;
+  z-index: 4;
+  width: min(840px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 13px 16px 14px;
+  border: 1px solid rgba(255, 248, 223, 0.32);
+  border-radius: 8px;
+  background: rgba(22, 36, 31, 0.82);
+  box-shadow: 0 18px 45px rgba(19, 33, 29, 0.34);
+  backdrop-filter: blur(9px);
+}
+
+.mission-dock strong {
+  display: block;
+  color: #fff9df;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.mission-dock p {
+  margin: 5px 0 0;
+  color: rgba(255, 248, 223, 0.9);
+  font-size: 0.96rem;
+  font-weight: 650;
+  line-height: 1.38;
 }
 
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: 126px;
+  z-index: 6;
   max-width: min(520px, calc(100vw - 32px));
   transform: translateX(-50%);
   padding: 11px 14px;
@@ -302,6 +335,12 @@ body {
   animation: intro-scroll 24s linear forwards;
 }
 
+.intro-scroll.is-skipped {
+  top: -112%;
+  animation: none;
+  transition: top 0.45s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
 .intro-kicker {
   margin-top: 0;
   color: #ffe38c;
@@ -346,11 +385,22 @@ body {
   box-shadow: 0 12px 34px rgba(6, 17, 14, 0.32);
 }
 
+.intro-start.is-reading,
 .intro-start:disabled {
   background: rgba(255, 248, 223, 0.14);
   color: rgba(255, 248, 223, 0.6);
-  cursor: default;
+  cursor: pointer;
   box-shadow: none;
+}
+
+.intro-start.is-reading:hover,
+.intro-start.is-reading:focus-visible {
+  background: rgba(255, 248, 223, 0.22);
+  color: rgba(255, 248, 223, 0.78);
+}
+
+.intro-start.is-irritated {
+  animation: intro-button-complaint 0.24s ease-in-out;
 }
 
 @keyframes intro-scroll {
@@ -363,11 +413,36 @@ body {
   }
 }
 
+@keyframes intro-button-complaint {
+  0% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-7px) rotate(-0.7deg);
+  }
+
+  50% {
+    transform: translateX(7px) rotate(0.7deg);
+  }
+
+  75% {
+    transform: translateX(-4px) rotate(-0.35deg);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
 @media (max-width: 640px) {
   .hud {
+    top: 12px;
     right: 12px;
     left: 12px;
     flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
   }
 
   .hud > div {
@@ -381,6 +456,23 @@ body {
 
   .hud-button {
     flex: 1 1 100%;
+  }
+
+  .mission-dock {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: calc(100vw - 24px);
+    padding: 11px 12px 12px;
+  }
+
+  .mission-dock p {
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .toast {
+    bottom: 142px;
   }
 
   .intro-overlay {

@@ -2,6 +2,25 @@
 
 All notable local prototype milestones for Whiskey Runner Rob are tracked here.
 
+## 0.5.0 - Traffic Threats and Bike Recovery
+
+- Added road vehicle threat detection so traffic brakes and steers toward the shoulder when Rob is in the lane.
+- Added automatic on-foot panic-dodging when Rob is about to be run over.
+- Added bike impact handling for traffic and combines.
+- Added a fallen-bike recovery state where Rob must stand beside the cruiser and press `E` to pick it back up.
+- Added alert markers and crash/lift sound cues for close calls and impacts.
+- Fixed Rob's on-foot facing so direct west movement uses the correct mirrored pose instead of snapping north.
+- Added an impatient intro skip: click the mandatory reading button three times quickly to make it shake, speed up, complain, and finally unlock.
+
+## 0.4.0 - Roadside Life and Mission Dock
+
+- Moved the long mission guide out of the crowded top HUD and into a bottom mission dock with room for wrapped instructions.
+- Added contextual guide text for nearby pickups, drop-offs, NPCs, discoveries, the bike, and Rob's front door.
+- Added walk-up neighbour interactions with Mavis, Gord, Burt, and Darlene.
+- Added small inspectable Easter eggs around the starter road, including the ditch cooler, mailbox manifesto, bug smear bucket, and potato warning.
+- Added moving road traffic: pickup truck, tractor, and delivery van.
+- Added working combines in the farm fields for ambient motion.
+
 ## 0.3.0 - Mission Branching, Sound, and Roadside Guidance
 
 - Added the flat scrolling intro that frames Rob as a post-paycheque entrepreneur with a motorcycle, two parrots, and an acrylic bug dome that needs adult supervision.
