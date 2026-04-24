@@ -26,14 +26,17 @@ Controls:
 - Mounted Rob includes the clear acrylic dome and two parrots.
 - The first mission sends Rob to the local hardware store for acrylic dome polish, then back to his garage to clean bug splatter off the parrot dome.
 - Finishing the dome polish run unlocks two follow-up errands: a damp model-kit rescue and apology cigars for a tractor-owning neighbour.
+- Completing two of the three starter errands opens the south-road section with two multi-leg missions: Clamato Ceasefire and Septic Diplomacy.
 - The mission browser lets Rob switch the active errand, while the bottom mission dock gives wrapped guidance for the next pickup, drop-off, or nearby interaction.
 - Rob has a small inventory and can pick up, drop, select, and use carried items.
 - Rob has a more natural on-foot walk cycle with alternating arm/leg swing and a bit of body bob.
 - Rob can enter the river on foot, swim around with a separate animation, and climb back onto land.
 - Rob can talk to roadside neighbours and inspect small Easter eggs while walking around.
+- The lower road adds Low Tide Bait & Regret, the Legion Hall of Folding Chair Justice, the Blue Rocket porta-loo, a scenic ditch lookout, and new Easter egg distractions.
 - Neighbours now sprint away with panic bubbles when Rob approaches too closely on the motorcycle.
 - Traffic, tractors, delivery vans, and working combines add a little motion and roadside life.
 - Road vehicles now brake and steer around Rob; on-foot Rob panic-hops out of danger, and bike impacts can knock the cruiser down until Rob picks it back up.
+- Bigger lower-road potholes add a small riding challenge by wobbling the bike or dropping it if Rob hits them too fast.
 - Procedural sound effects provide ambient countryside noise, bird chirps, motorcycle engine rumble, horn, and inventory/mission feedback.
 
 ## Design Notes

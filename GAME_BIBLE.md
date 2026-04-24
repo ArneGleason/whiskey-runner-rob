@@ -571,16 +571,21 @@ Current playable scope:
 - Rob can pick up, drop, re-pick, and use carried items.
 - First mission: fetch acrylic dome polish from MacLeod's Hardware-ish and bring it back to Rob's garage.
 - Completing the first mission unlocks two branch missions: Model Kit Hostage Situation and Apology Cigars for Burt.
+- Completing two of the three starter errands opens the south road past a barricade and unlocks the next pair of missions.
+- Multi-leg missions can now chain ordered pickup/drop stages, where finishing the first task reveals the next item or objective.
+- South-road missions currently include Clamato Ceasefire and Septic Diplomacy.
 - A mission browser lets the player switch the active errand.
 - A bottom mission dock provides wrapped guidance for the current mission and nearby walk-around interactions.
 - The target marker points toward the current mission pickup, dropped mission item, or delivery point.
 - On-foot Rob can talk to nearby neighbours and inspect small roadside Easter eggs.
+- The south road adds Low Tide Bait & Regret, the Legion Hall of Folding Chair Justice, the Blue Rocket porta-loo, a scenic ditch lookout, Cecil, Miriam, and several new questionable discoveries.
 - Moving pickup trucks, tractors, delivery vans, and field combines add early ambient life to the road slice.
 - Road vehicles detect Rob, brake, and steer toward the shoulder to avoid him.
 - On-foot Rob automatically panic-dodges out of the way when traffic or field equipment gets too close.
 - Motorcycle impacts can knock the cruiser down; Rob must dismount, stand beside it, and press `E` to pick it back up.
 - The river is now a swimmable terrain zone for on-foot Rob, with a separate head-and-arms swim animation and slower movement.
 - On-foot NPCs detect Rob approaching on the motorcycle, run away with panic bubbles, and cannot be run over.
+- Larger lower-road potholes add a speed-management challenge: moderate hits wobble and slow the bike, while excessive speed can knock it over.
 - Rob's on-foot walk cycle has alternating leg/arm swing and body bob.
 - Procedural sound effects add ambience, birds, motorcycle engine rumble, horn, and inventory/mission cues.
 - The speedometer displays a scaled rural-road `km/h` value instead of raw world units.

@@ -2,6 +2,15 @@
 
 All notable local prototype milestones for Whiskey Runner Rob are tracked here.
 
+## 0.7.0 - South Road Mission Expansion
+
+- Added a gated south-road section that opens after Rob completes two of the three starter errands.
+- Added support for multi-leg missions with ordered pickup/drop stages.
+- Added two lower-road missions: Clamato Ceasefire and Septic Diplomacy.
+- Added Low Tide Bait & Regret, the Legion Hall of Folding Chair Justice, the Blue Rocket porta-loo, and the scenic ditch lookout.
+- Added new lower-road NPCs, discoveries, and Easter eggs.
+- Added larger south-road pothole hazards that wobble the bike or knock it over at excessive speed.
+
 ## 0.6.0 - River Swimming and NPC Safety
 
 - Moved the visible river left so the bank and bank-side trees sit on land instead of in the water.

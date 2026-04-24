@@ -22,7 +22,7 @@
     minX: -760,
     maxX: 760,
     minY: -2450,
-    maxY: 2450,
+    maxY: 3250,
     roadX: 0,
     roadWidth: 156,
     roadShoulder: 36,
@@ -40,6 +40,7 @@
     speed: 0,
     fallen: false,
     fallSide: 1,
+    lastHazardAt: 0,
   };
 
   const speedometerScale = 0.16;
@@ -84,6 +85,7 @@
     { x: -370, y: 650, wall: "#fff0cf", roof: "#866038" },
     { x: -315, y: 1315, wall: "#e8d2c7", roof: "#693838", shed: true },
     { x: -430, y: 2025, wall: "#d6e7d5", roof: "#4f6a45" },
+    { x: -382, y: 2860, wall: "#f1dfc1", roof: "#5f4b6e", shed: true },
   ];
 
   const fields = [
@@ -95,6 +97,7 @@
     { x: 178, y: 755, w: 500, h: 540, fill: "#8dbd59", rows: "#6f9d42", barn: true },
     { x: 148, y: 1515, w: 460, h: 500, fill: "#d8bd63", rows: "#a78b38" },
     { x: 170, y: 2180, w: 505, h: 410, fill: "#73a84c", rows: "#588536" },
+    { x: 152, y: 2730, w: 520, h: 430, fill: "#c78c46", rows: "#93652e", silo: true },
   ];
 
   const hardwareStore = {
@@ -120,6 +123,42 @@
     name: "Burt's Tractor Shed",
   };
 
+  const southGate = {
+    y: 1460,
+    name: "Road Crew Barricade of Selective Progress",
+  };
+
+  const baitShack = {
+    x: -382,
+    y: 1710,
+    counterX: -256,
+    counterY: 1784,
+    name: "Low Tide Bait & Regret",
+  };
+
+  const legionHall = {
+    x: -374,
+    y: 2390,
+    counterX: -244,
+    counterY: 2466,
+    r: 86,
+    name: "Legion Hall of Folding Chair Justice",
+  };
+
+  const blueRocket = {
+    x: 326,
+    y: 1988,
+    r: 78,
+    name: "The Blue Rocket Porta-Loo",
+  };
+
+  const ferryLookout = {
+    x: 346,
+    y: 2820,
+    r: 82,
+    name: "Ferry Lookout That Is Mostly Ditch",
+  };
+
   const garageDrop = {
     x: -150,
     y: 112,
@@ -139,6 +178,7 @@
       id: "domePolish",
       name: "Dome Polish",
       shortName: "Dome Polish",
+      tag: "BUG",
       color: "#9ee8ff",
       accent: "#fff7a8",
       useText: "Rob buffs one perfect little circle. The parrots can now see every bug that died for this commute.",
@@ -148,6 +188,7 @@
       id: "modelKit",
       name: "Damp Model Kit",
       shortName: "Model Kit",
+      tag: "KIT",
       color: "#f5d36e",
       accent: "#315f8f",
       useText: "Rob sniffs the box. It smells like basement, glue, and a custody dispute over hobby supplies.",
@@ -157,10 +198,51 @@
       id: "apologyCigars",
       name: "Apology Cigars",
       shortName: "Cigars",
+      tag: "OWE",
       color: "#8b5738",
       accent: "#ffd18a",
       useText: "Rob opens the box and calls it aromatherapy for men avoiding accountability.",
       dropText: "Rob drops the apology cigars. That is either generosity or evidence tampering.",
+    },
+    clamatoJug: {
+      id: "clamatoJug",
+      name: "Suspicious Clamato Jug",
+      shortName: "Clamato",
+      tag: "CLM",
+      color: "#d45d4c",
+      accent: "#ffd9a6",
+      useText: "Rob sniffs the jug and immediately loses an argument with shellfish and tomato.",
+      dropText: "Rob sets down the Clamato with the caution normally reserved for unstable science.",
+    },
+    parrotMints: {
+      id: "parrotMints",
+      name: "Industrial Parrot Mints",
+      shortName: "Mints",
+      tag: "MNT",
+      color: "#baf0d8",
+      accent: "#356f61",
+      useText: "Rob considers feeding the parrots industrial mints, then remembers they know where he sleeps.",
+      dropText: "Rob drops the mints. The ground briefly smells like dental regret.",
+    },
+    septicTabs: {
+      id: "septicTabs",
+      name: "Blue Rocket Septic Tabs",
+      shortName: "Septic Tabs",
+      tag: "TAB",
+      color: "#82c2ef",
+      accent: "#f7ef9a",
+      useText: "Rob reads the label: 'Do not combine with pride.' Finally, clear instructions.",
+      dropText: "Rob drops the septic tabs and pretends that was part of the treatment plan.",
+    },
+    dignityReceipt: {
+      id: "dignityReceipt",
+      name: "Dignity Receipt",
+      shortName: "Receipt",
+      tag: "RCP",
+      color: "#f4e2a8",
+      accent: "#7c4b37",
+      useText: "The receipt proves dignity happened nearby, briefly, under protest.",
+      dropText: "Rob drops the dignity receipt. The receipt appreciates the thematic consistency.",
     },
   };
 
@@ -213,15 +295,78 @@
       completeText: "Mission complete: Burt accepts the cigars and upgrades Rob from 'jackass' to 'useful jackass.'",
       unlocks: [],
     },
+    clamatoCeasefire: {
+      id: "clamatoCeasefire",
+      title: "Clamato Ceasefire",
+      summary: "Two stops: haul a suspicious jug to the Legion, then bring home industrial parrot mints before the birds weaponize their breath.",
+      lockedText: "Locked until two starter errands are complete and the south road stops pretending it is municipal infrastructure",
+      legs: [
+        {
+          item: "clamatoJug",
+          pickup: { x: baitShack.counterX, y: baitShack.counterY, r: 78, label: "Clamato jug", place: baitShack.name },
+          drop: { x: legionHall.counterX, y: legionHall.counterY, r: legionHall.r, label: "Legion hall", place: legionHall.name },
+          pickupGuide: "Ride south past the newly opened barricade to Low Tide Bait & Regret and pick up the suspicious Clamato jug.",
+          returnGuide: "Deliver the Clamato to the Legion Hall before poker night becomes a tomato-forward crime scene.",
+          pickupText: "Picked up the Suspicious Clamato Jug. It sloshes like it knows a lawyer.",
+          dropText: "Stage complete: the Legion accepts the jug and pays Rob in industrial parrot mints, because cash has standards.",
+        },
+        {
+          item: "parrotMints",
+          pickup: { x: legionHall.counterX + 26, y: legionHall.counterY - 8, r: 76, label: "Parrot mints", place: legionHall.name },
+          drop: { x: garageDrop.x, y: garageDrop.y, r: garageDrop.r, label: "Rob's garage", place: garageDrop.name },
+          pickupGuide: "Grab the industrial parrot mints from the Legion counter. They are beside the ashtray labelled 'heritage.'",
+          returnGuide: "Bring the mints back to Rob's garage before the parrots breathe directly onto the acrylic dome.",
+          pickupText: "Picked up Industrial Parrot Mints. The tin says 'not tested on birds with grudges.'",
+          dropText: "Mission complete: Rob stores the mints near the dome polish. The parrots plan a mint-assisted insult campaign.",
+        },
+      ],
+      completeGuide: "The mints are home. Rob's business now has seafood tomato exposure and breath-risk mitigation.",
+      completeText: "Mission complete: Rob neutralizes the parrot breath situation with something that smells like a hospital married a candy cane.",
+      unlocks: [],
+    },
+    septicDiplomacy: {
+      id: "septicDiplomacy",
+      title: "Septic Diplomacy",
+      summary: "Two stops: dose the Blue Rocket porta-loo, then bring the dignity receipt to the scenic ditch lookout like a normal adult.",
+      lockedText: "Locked until two starter errands are complete and Rob earns access to lower-road consequences",
+      legs: [
+        {
+          item: "septicTabs",
+          pickup: { x: baitShack.counterX - 22, y: baitShack.counterY + 34, r: 76, label: "Septic tabs", place: baitShack.name },
+          drop: { x: blueRocket.x, y: blueRocket.y, r: blueRocket.r, label: "Blue Rocket", place: blueRocket.name },
+          pickupGuide: "Pick up septic tabs at Low Tide Bait & Regret. The clerk calls them 'blue mercy biscuits.'",
+          returnGuide: "Take the septic tabs to the Blue Rocket porta-loo on the farm side, then stand back spiritually.",
+          pickupText: "Picked up Blue Rocket Septic Tabs. Rob tries not to read the ingredients because he enjoys hope.",
+          dropText: "Stage complete: Rob doses the Blue Rocket. Something inside burps with municipal confidence and prints a receipt.",
+        },
+        {
+          item: "dignityReceipt",
+          pickup: { x: blueRocket.x + 34, y: blueRocket.y + 26, r: 74, label: "Dignity receipt", place: blueRocket.name },
+          drop: { x: ferryLookout.x, y: ferryLookout.y, r: ferryLookout.r, label: "ditch lookout", place: ferryLookout.name },
+          pickupGuide: "Collect the dignity receipt from beside the Blue Rocket. Use two fingers and emotional distance.",
+          returnGuide: "Deliver the dignity receipt to the ferry lookout that is mostly ditch. The island demands closure.",
+          pickupText: "Picked up the Dignity Receipt. It is damp, stamped, and legally upsetting.",
+          dropText: "Mission complete: Rob files the dignity receipt at the scenic ditch. The ditch declines to comment.",
+        },
+      ],
+      completeGuide: "The porta-loo accord is complete. Civilization survives, though nobody is proud of the paperwork.",
+      completeText: "Mission complete: Rob saves the Blue Rocket and files the receipt in a ditch with better governance than expected.",
+      unlocks: [],
+    },
   };
 
   const missionStates = {
     domePolishRun: { state: "pickup", unlocked: true, complete: false },
     modelKitSnatch: { state: "locked", unlocked: false, complete: false },
     apologyCigars: { state: "locked", unlocked: false, complete: false },
+    clamatoCeasefire: { state: "locked", unlocked: false, complete: false, legIndex: 0 },
+    septicDiplomacy: { state: "locked", unlocked: false, complete: false, legIndex: 0 },
   };
 
   let activeMissionId = "domePolishRun";
+
+  const starterMissionIds = ["domePolishRun", "modelKitSnatch", "apologyCigars"];
+  const southMissionIds = ["clamatoCeasefire", "septicDiplomacy"];
 
   const worldItems = [
     createWorldItem("domePolish", hardwareStore.counterX, hardwareStore.counterY, "hardware", "domePolishRun"),
@@ -320,6 +465,52 @@
         "If that dome fogs up again, just follow the smell of poor decisions home.",
       ],
     },
+    {
+      id: "cecil",
+      name: "Cecil",
+      baseX: -286,
+      baseY: 1748,
+      x: -286,
+      y: 1748,
+      radiusX: 34,
+      radiusY: 22,
+      phase: 1.35,
+      color: "#5b493e",
+      accent: "#a8d3d2",
+      skin: "#c98c64",
+      hat: "#273b43",
+      talkIndex: 0,
+      bubbleText: "",
+      bubbleUntil: 0,
+      lines: [
+        "If the jug hisses, charge extra and don't make eye contact.",
+        "Bait, regret, and tomato clam slurry all go on the same invoice here.",
+        "Your parrots keep asking if I sell tiny helmets. I respect their fear.",
+      ],
+    },
+    {
+      id: "miriam",
+      name: "Miriam",
+      baseX: -278,
+      baseY: 2438,
+      x: -278,
+      y: 2438,
+      radiusX: 38,
+      radiusY: 20,
+      phase: 3.75,
+      color: "#485f8f",
+      accent: "#f2d28d",
+      skin: "#d99a6c",
+      hat: "#7a2734",
+      talkIndex: 0,
+      bubbleText: "",
+      bubbleUntil: 0,
+      lines: [
+        "The Legion hall has rules. None are good, but several are laminated.",
+        "Those mints are for parrots, uncles, and anyone who says 'just one more story.'",
+        "If Rob calls this logistics, I am calling bingo a paramilitary operation.",
+      ],
+    },
   ];
 
   const discoveries = [
@@ -371,6 +562,54 @@
       text: "A hand-painted sign reads: 'NO TRESPASSING. POTATOES ARE LISTENING.' Rob nods like this explains taxes.",
       repeatText: "The potatoes continue listening. Rob lowers his voice around root vegetables.",
     },
+    {
+      id: "bridgeTollJar",
+      kind: "cooler",
+      x: -138,
+      y: 1628,
+      label: "Bridge Toll Jar",
+      seen: false,
+      color: "#b8dce2",
+      accent: "#f7e2a5",
+      text: "A mayo jar says 'Confederation Bridge toll, cash only.' It contains six buttons, a tooth, and aggressive optimism.",
+      repeatText: "The fake toll jar remains open for business and closed to shame.",
+    },
+    {
+      id: "emergencyPotatoPhone",
+      kind: "sign",
+      x: 134,
+      y: 1884,
+      label: "Emergency Potato Phone",
+      seen: false,
+      color: "#f1d289",
+      accent: "#5a452e",
+      text: "A sign points to a potato wired to a handset: 'FOR CROP EMERGENCIES ONLY.' Rob wonders if it takes collect calls.",
+      repeatText: "The potato phone has no dial tone, but it has excellent starch coverage.",
+    },
+    {
+      id: "blueBarrel",
+      kind: "bucket",
+      x: 402,
+      y: 2096,
+      label: "Suspicious Blue Barrel",
+      seen: false,
+      color: "#3a77a6",
+      accent: "#bbd7e7",
+      text: "The barrel is labelled 'NOT FERRY SAUCE.' Rob chooses not to learn what that means, which is personal growth.",
+      repeatText: "The barrel still denies being ferry sauce with suspicious confidence.",
+    },
+    {
+      id: "deadFerrySchedule",
+      kind: "sign",
+      x: 382,
+      y: 2766,
+      label: "Dead Ferry Schedule",
+      seen: false,
+      color: "#fff0bd",
+      accent: "#69402f",
+      text: "A ferry schedule from 1989 promises departure 'when someone important finishes a sandwich.'",
+      repeatText: "The old ferry schedule remains more reliable than Rob's business model.",
+    },
   ];
 
   const roadVehicles = [
@@ -416,11 +655,33 @@
       lastQuipAt: 0,
       quip: "A dented delivery van goes past smelling faintly of bait, coffee, and consequences.",
     },
+    {
+      kind: "tourist",
+      x: 34,
+      laneX: 34,
+      y: 2610,
+      baseSpeed: -64,
+      speed: -64,
+      color: "#efcf78",
+      accent: "#5d8aae",
+      length: 66,
+      alertUntil: 0,
+      lastQuipAt: 0,
+      quip: "A tourist car drifts by at map-reading speed, signalling a turn it made emotionally three minutes ago.",
+    },
   ];
 
   const combines = [
     { x: 230, y: -1610, minX: 205, maxX: 555, baseSpeed: 34, speed: 34, dir: 1, alertUntil: 0, color: "#d5a43c", accent: "#6b4427" },
     { x: 245, y: 920, minX: 215, maxX: 565, baseSpeed: 27, speed: 27, dir: -1, alertUntil: 0, color: "#b7bd46", accent: "#4c5d2f" },
+    { x: 250, y: 2840, minX: 220, maxX: 575, baseSpeed: 31, speed: 31, dir: 1, alertUntil: 0, color: "#c99b36", accent: "#5c3f28" },
+  ];
+
+  const roadHazards = [
+    { x: -42, y: 1668, r: 18, label: "budget pothole" },
+    { x: 38, y: 2078, r: 20, label: "frost heave" },
+    { x: -30, y: 2548, r: 17, label: "culvert burp" },
+    { x: 42, y: 2920, r: 22, label: "heritage crater" },
   ];
 
   const trees = makeTrees();
@@ -433,6 +694,7 @@
   let introSkipResetTimer = 0;
   let lastTime = performance.now();
   let toastUntil = 0;
+  let lastSouthGateScoldAt = 0;
 
   const audio = {
     context: null,
@@ -716,7 +978,7 @@
         }
       }
     } else {
-      updateBike(dt);
+      updateBike(dt, now);
       if (rob.mode === "bike" && input.actionQueued) {
         if (Math.abs(bike.speed) < 34 && handleInteractionAction()) {
           bike.speed = 0;
@@ -790,14 +1052,15 @@
     inventory.selected = inventory.slots.length - 1;
     playPickupSound();
     const relatedMission = missionForItem(item.type);
+    const relatedState = relatedMission ? missionStates[relatedMission.id] : null;
+    const relatedLeg = relatedMission ? currentMissionLeg(relatedMission, relatedState) : null;
     if (relatedMission) {
-      const state = missionStates[relatedMission.id];
-      if (state.unlocked && state.state === "pickup") {
-        state.state = "return";
+      if (relatedState.unlocked && !relatedState.complete && relatedState.state === "pickup" && relatedLeg && relatedLeg.item === item.type) {
+        relatedState.state = "return";
       }
     }
 
-    say(relatedMission ? relatedMission.pickupText : `Picked up ${itemTypes[item.type].name}.`, 3.5);
+    say(relatedMission && relatedLeg ? relatedLeg.pickupText : `Picked up ${itemTypes[item.type].name}.`, 3.5);
 
     return true;
   }
@@ -829,19 +1092,32 @@
   function tryDeliverActiveMission(actor) {
     const def = activeMissionDef();
     const state = activeMissionState();
-    if (!def || !state || state.complete || state.state !== "return") return false;
-    if (distance(actor, def.drop) > def.drop.r || !hasItem(def.item)) return false;
+    const leg = currentMissionLeg(def, state);
+    if (!def || !state || !leg || state.complete || state.state !== "return") return false;
+    if (distance(actor, leg.drop) > leg.drop.r || !hasItem(leg.item)) return false;
 
-    removeItemFromInventory(def.item);
+    removeItemFromInventory(leg.item);
+
+    if (state.legIndex !== undefined && state.legIndex < missionLegCount(def) - 1) {
+      state.legIndex += 1;
+      state.state = "pickup";
+      ensureMissionItem(def.id);
+      renderMissionBrowser();
+      playUseSound();
+      say(`${leg.dropText} ${missionGuideText()}`, 5.2);
+      return true;
+    }
+
     state.state = "complete";
     state.complete = true;
     playMissionCompleteSound();
-    unlockMissions(def.unlocks);
+    const unlocked = unlockMissions(def.unlocks);
+    const openedSouth = maybeUnlockSouthRoad();
     renderMissionBrowser();
-    if (def.unlocks.length) {
+    if (unlocked.length || openedSouth) {
       window.setTimeout(openMissionBrowser, 900);
     }
-    say(def.completeText, 5);
+    say(`${def.completeText}${openedSouth ? " The road crew grudgingly opens the south road, unlocking two lower-road errands with worse smells and better paperwork." : ""}`, openedSouth ? 6.5 : 5);
     return true;
   }
 
@@ -888,7 +1164,8 @@
     const type = inventory.slots[clamp(inventory.selected, 0, inventory.slots.length - 1)];
     const actor = actorPoint();
     const active = activeMissionDef();
-    if (active && type === active.item && distance(actor, active.drop) <= active.drop.r) {
+    const activeLeg = currentMissionLeg(active, activeMissionState());
+    if (activeLeg && type === activeLeg.item && distance(actor, activeLeg.drop) <= activeLeg.drop.r) {
       tryDeliverActiveMission(actor);
       return;
     }
@@ -963,46 +1240,90 @@
     return missionStates[activeMissionId];
   }
 
+  function missionLegCount(def) {
+    return def && def.legs ? def.legs.length : 1;
+  }
+
+  function missionLegs(def) {
+    if (!def) return [];
+    return def.legs || [def];
+  }
+
+  function currentMissionLeg(def, state) {
+    if (!def) return null;
+    if (!def.legs) return def;
+    const index = clamp(state && state.legIndex !== undefined ? state.legIndex : 0, 0, def.legs.length - 1);
+    return def.legs[index];
+  }
+
   function missionForItem(type) {
-    return Object.values(missionDefs).find((def) => def.item === type) || null;
+    for (const [missionId, def] of Object.entries(missionDefs)) {
+      const state = missionStates[missionId];
+      const leg = currentMissionLeg(def, state);
+      if (state && state.unlocked && !state.complete && leg && leg.item === type) return def;
+    }
+
+    return Object.values(missionDefs).find((def) => missionLegs(def).some((leg) => leg.item === type)) || null;
   }
 
   function activeMissionTarget() {
     const def = activeMissionDef();
     const state = activeMissionState();
+    const leg = currentMissionLeg(def, state);
     if (!def || !state || !state.unlocked || state.complete) return null;
-    if (state.state === "return" && !hasItem(def.item)) {
-      const looseItem = worldItems.find((item) => item.type === def.item && !item.carried && !item.delivered);
-      if (looseItem) return { x: looseItem.x, y: looseItem.y, r: 74, label: itemTypes[def.item].shortName, place: "Wherever Rob left it" };
+    if (!leg) return null;
+    if (state.state === "return" && !hasItem(leg.item)) {
+      const looseItem = worldItems.find((item) => item.type === leg.item && !item.carried && !item.delivered);
+      if (looseItem) return { x: looseItem.x, y: looseItem.y, r: 74, label: itemTypes[leg.item].shortName, place: "Wherever Rob left it" };
     }
-    if (state.state === "return") return def.drop;
-    return def.pickup;
+    if (state.state === "return") return leg.drop;
+    return leg.pickup;
   }
 
   function canDeliverActiveMission(actor) {
     const def = activeMissionDef();
     const state = activeMissionState();
-    return Boolean(def && state && state.state === "return" && hasItem(def.item) && distance(actor, def.drop) <= def.drop.r);
+    const leg = currentMissionLeg(def, state);
+    return Boolean(def && state && leg && state.state === "return" && hasItem(leg.item) && distance(actor, leg.drop) <= leg.drop.r);
   }
 
   function unlockMissions(ids) {
+    const unlocked = [];
     for (const id of ids) {
       const state = missionStates[id];
       const def = missionDefs[id];
       if (!state || !def || state.unlocked) continue;
       state.unlocked = true;
       state.state = "pickup";
+      if (state.legIndex !== undefined) state.legIndex = 0;
       ensureMissionItem(id);
+      unlocked.push(id);
     }
+    return unlocked;
+  }
+
+  function completedStarterMissionCount() {
+    return starterMissionIds.filter((id) => missionStates[id] && missionStates[id].complete).length;
+  }
+
+  function isSouthRoadUnlocked() {
+    return completedStarterMissionCount() >= 2;
+  }
+
+  function maybeUnlockSouthRoad() {
+    if (!isSouthRoadUnlocked()) return false;
+    return unlockMissions(southMissionIds).length > 0;
   }
 
   function ensureMissionItem(missionId) {
     const def = missionDefs[missionId];
     const state = missionStates[missionId];
     if (!def || !state) return;
-    const alreadyInWorld = worldItems.some((item) => item.type === def.item && !item.delivered);
-    if (alreadyInWorld || hasItem(def.item) || state.complete) return;
-    worldItems.push(createWorldItem(def.item, def.pickup.x, def.pickup.y, "mission", missionId));
+    const leg = currentMissionLeg(def, state);
+    if (!leg || state.state !== "pickup") return;
+    const alreadyInWorld = worldItems.some((item) => item.type === leg.item && !item.delivered);
+    if (alreadyInWorld || hasItem(leg.item) || state.complete) return;
+    worldItems.push(createWorldItem(leg.item, leg.pickup.x, leg.pickup.y, "mission", missionId));
   }
 
   function missionStatusText() {
@@ -1010,17 +1331,20 @@
     const state = activeMissionState();
     if (!def || !state) return "No mission";
     if (state.complete) return `${def.title}: done`;
+    if (missionLegCount(def) > 1) return `${def.title} ${((state.legIndex || 0) + 1)}/${missionLegCount(def)}`;
     return def.title;
   }
 
   function missionGuideText() {
     const def = activeMissionDef();
     const state = activeMissionState();
+    const leg = currentMissionLeg(def, state);
     if (!def || !state || !state.unlocked) return "Press M to pick an available errand.";
     if (state.complete) return def.completeGuide;
-    if (state.state === "return" && !hasItem(def.item)) return `Pick ${itemTypes[def.item].shortName} back up. Rob cannot deliver a memory.`;
-    if (state.state === "return") return def.returnGuide;
-    return def.pickupGuide;
+    if (!leg) return "Rob has found a mission without instructions, which is technically still a business plan.";
+    if (state.state === "return" && !hasItem(leg.item)) return `Pick ${itemTypes[leg.item].shortName} back up. Rob cannot deliver a memory.`;
+    if (state.state === "return") return leg.returnGuide;
+    return leg.pickupGuide;
   }
 
   function currentGuideText() {
@@ -1034,6 +1358,7 @@
     if (rob.mode === "foot") {
       if (rob.panicUntil > performance.now()) return "Rob is moving himself out of traffic before his obituary becomes a roadside anecdote.";
       if (isInRiver(rob)) return "Rob is swimming. Aim for the red bank unless he wants his boots classified as soup.";
+      if (!isSouthRoadUnlocked() && Math.abs(rob.y - southGate.y) < 140) return `South road blocked: finish ${2 - completedStarterMissionCount()} more starter errand${2 - completedStarterMissionCount() === 1 ? "" : "s"} to open it.`;
       if (canDeliverActiveMission(actor)) return "Drop-off is right here.";
 
       const item = nearestWorldItem(actor, 74);
@@ -1051,6 +1376,7 @@
     }
 
     if (rob.mode === "bike" && Math.abs(bike.speed) < 34) {
+      if (!isSouthRoadUnlocked() && Math.abs(bike.y - southGate.y) < 150) return `South road blocked: finish ${2 - completedStarterMissionCount()} more starter errand${2 - completedStarterMissionCount() === 1 ? "" : "s"} to open it.`;
       if (canDeliverActiveMission(actor)) return "The drop-off is close enough for Rob to make it official.";
       const item = nearestWorldItem(actor, 74);
       if (item) return `Cargo is close: ${itemTypes[item.type].name}.`;
@@ -1061,9 +1387,11 @@
 
   function missionCardStatus(missionId) {
     const state = missionStates[missionId];
-    if (!state.unlocked) return "Locked until Rob proves he can finish one stupid thing";
+    const def = missionDefs[missionId];
+    if (!state.unlocked) return def.lockedText || "Locked until Rob proves he can finish one stupid thing";
     if (state.complete) return "Complete";
     if (missionId === activeMissionId) return "Active";
+    if (missionLegCount(def) > 1) return `Available - ${missionLegCount(def)} stage nonsense`;
     return "Available";
   }
 
@@ -1365,6 +1693,8 @@
       gord: "I'M TOO DAMP TO DIE!",
       burt: "BRAKES, YOU CHROME IDIOT!",
       darlene: "MY BREAD DOUGH SAW THAT!",
+      cecil: "SAVE THE CLAMATO!",
+      miriam: "NOT IN MY PARKING LOT!",
     };
     return lines[npc.id] || "AAAAAAAA!";
   }
@@ -1533,6 +1863,42 @@
     }
   }
 
+  function checkRoadHazards(now) {
+    if (rob.mode !== "bike" || bike.fallen || !isSouthRoadUnlocked() || surfaceAt(bike.x, bike.y) !== "road") return;
+    if (now - bike.lastHazardAt < 850) return;
+
+    for (const hazard of roadHazards) {
+      if (distance(bike, hazard) > hazard.r + 23) continue;
+      bike.lastHazardAt = now;
+
+      if (Math.abs(bike.speed) > 252) {
+        fallBike(hazard, `Rob hits a ${hazard.label} at speed and learns the road has a cancellation policy.`, now);
+        return;
+      }
+
+      const wobble = bike.x < hazard.x ? -0.32 : 0.32;
+      bike.heading += wobble * signNonZero(bike.speed || 1);
+      bike.speed *= 0.58;
+      playDropSound();
+      say(`Rob bounces through a ${hazard.label}. The dome wobbles; the parrots invent three new slurs for asphalt.`, 3.3);
+      return;
+    }
+  }
+
+  function applySouthGate(point, radius, now) {
+    if (isSouthRoadUnlocked()) return;
+    const limit = southGate.y - radius;
+    if (point.y <= limit) return;
+
+    point.y = limit;
+    if (point === bike) bike.speed *= -0.16;
+
+    if (now - lastSouthGateScoldAt > 2600) {
+      lastSouthGateScoldAt = now;
+      say("The south road is still blocked by a barricade and one deeply satisfied traffic cone. Finish two starter errands first.", 3.5);
+    }
+  }
+
   function fallBike(obstacle, text, now) {
     bike.fallen = true;
     bike.fallSide = bike.x >= obstacle.x ? 1 : -1;
@@ -1574,6 +1940,7 @@
       rob.isWalking = true;
       rob.walkTime += dt * 17;
       constrainPoint(rob, 12, { allowRiver: true });
+      applySouthGate(rob, 12, now);
       return;
     }
 
@@ -1591,10 +1958,11 @@
       rob.walkTime += (0 - rob.walkTime) * Math.min(1, dt * 3);
     }
     constrainPoint(rob, 12, { allowRiver: true });
+    applySouthGate(rob, 12, now);
     updateSwimmingState();
   }
 
-  function updateBike(dt) {
+  function updateBike(dt, now) {
     if (bike.fallen) {
       bike.speed = 0;
       return;
@@ -1626,6 +1994,7 @@
     bike.x += Math.cos(bike.heading) * bike.speed * dt;
     bike.y += Math.sin(bike.heading) * bike.speed * dt;
     constrainPoint(bike, 24);
+    applySouthGate(bike, 24, now);
 
     if (bike.x < world.riverRight + world.riverBankWidth) {
       bike.x = world.riverRight + world.riverBankWidth;
@@ -1633,7 +2002,8 @@
       say("The river bank votes no.", 1.7);
     }
 
-    checkBikeImpact(performance.now());
+    checkRoadHazards(now);
+    checkBikeImpact(now);
   }
 
   function updateCamera(dt) {
@@ -1677,10 +2047,15 @@
     drawRiver();
     drawFields();
     drawRoad();
+    drawSouthGate(now);
     drawDriveways();
     drawRoadVehicles(now);
     drawHardwareStore();
     drawYardSale();
+    drawBaitShack();
+    drawLegionHall();
+    drawBlueRocket();
+    drawFerryLookout();
     drawHouses();
     drawTrees();
     drawFarmDetails();
@@ -1802,6 +2177,68 @@
     for (const mark of laneMarks) {
       drawPothole(mark.x, mark.y, mark.r);
     }
+
+    for (const hazard of roadHazards) {
+      drawRoadHazard(hazard);
+    }
+  }
+
+  function drawSouthGate(now) {
+    const roadLeft = world.roadX - world.roadWidth / 2;
+    const sx = screenX(roadLeft - world.roadShoulder);
+    const sy = screenY(southGate.y);
+    const width = world.roadWidth + world.roadShoulder * 2;
+    const open = isSouthRoadUnlocked();
+
+    ctx.save();
+    if (!open) {
+      ctx.fillStyle = "rgba(33, 28, 22, 0.34)";
+      ctx.fillRect(sx - 8, sy - 20, width + 16, 48);
+      ctx.strokeStyle = "#f1d87d";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(sx + 8, sy);
+      ctx.lineTo(sx + width - 8, sy);
+      ctx.stroke();
+      ctx.strokeStyle = "#74362d";
+      ctx.lineWidth = 4;
+      for (let i = 0; i < 6; i += 1) {
+        const x = sx + 18 + i * 34;
+        ctx.beginPath();
+        ctx.moveTo(x, sy - 16);
+        ctx.lineTo(x + 24, sy + 16);
+        ctx.stroke();
+      }
+      drawGateSign(world.roadX, southGate.y - 46, "ROAD CLOSED", "FINISH 2 ERRANDS");
+    } else {
+      const bob = Math.sin(now / 260) * 2;
+      drawGateSign(world.roadX, southGate.y - 40 + bob, "SOUTH ROAD", "UNFORTUNATELY OPEN");
+    }
+    ctx.restore();
+  }
+
+  function drawGateSign(wx, wy, top, bottom) {
+    const sx = screenX(wx);
+    const sy = screenY(wy);
+    ctx.strokeStyle = "#5e3f2b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy + 18);
+    ctx.lineTo(sx, sy + 56);
+    ctx.stroke();
+    ctx.fillStyle = "#fff0b8";
+    ctx.strokeStyle = "#5b332c";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(sx - 56, sy - 16, 112, 36, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#4b3328";
+    ctx.font = "900 9px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(top, sx, sy - 4);
+    ctx.fillText(bottom, sx, sy + 8);
   }
 
   function drawDriveways() {
@@ -1811,7 +2248,11 @@
     }
     drawRedDirtPath(hardwareStore.x + 96, hardwareStore.y + 92, -world.roadWidth / 2 - 8, hardwareStore.y + 92, 28);
     drawRedDirtPath(yardSale.x + 128, yardSale.y + 84, -world.roadWidth / 2 - 8, yardSale.y + 84, 26);
+    drawRedDirtPath(baitShack.x + 128, baitShack.y + 92, -world.roadWidth / 2 - 8, baitShack.y + 92, 27);
+    drawRedDirtPath(legionHall.x + 132, legionHall.y + 92, -world.roadWidth / 2 - 8, legionHall.y + 92, 30);
     drawRedDirtPath(world.roadWidth / 2 + 10, tractorShed.y, tractorShed.x - 40, tractorShed.y, 28);
+    drawRedDirtPath(world.roadWidth / 2 + 10, blueRocket.y, blueRocket.x - 18, blueRocket.y, 24);
+    drawRedDirtPath(world.roadWidth / 2 + 10, ferryLookout.y, ferryLookout.x - 26, ferryLookout.y, 22);
   }
 
   function drawHouses() {
@@ -2221,7 +2662,7 @@
     }
 
     if (canDeliverActiveMission(actor) && (rob.mode !== "bike" || Math.abs(bike.speed) < 34)) {
-      const target = activeMissionDef().drop;
+      const target = currentMissionLeg(activeMissionDef(), activeMissionState()).drop;
       drawPrompt(target.x, target.y - 50, "E", now);
       return;
     }
@@ -2329,6 +2770,139 @@
     drawCrate(yardSale.tableX + 36, yardSale.tableY + 12, "#a36b4c");
   }
 
+  function drawBaitShack() {
+    const x = screenX(baitShack.x);
+    const y = screenY(baitShack.y);
+    ctx.fillStyle = "rgba(36, 33, 27, 0.23)";
+    ctx.fillRect(x - 7, y + 16, 162, 92);
+
+    ctx.fillStyle = "#d2e0d3";
+    ctx.fillRect(x, y + 32, 128, 76);
+    ctx.fillStyle = "#325c63";
+    ctx.beginPath();
+    ctx.moveTo(x - 10, y + 38);
+    ctx.lineTo(x + 64, y - 2);
+    ctx.lineTo(x + 139, y + 38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#55372b";
+    ctx.fillRect(x + 18, y + 66, 30, 42);
+    ctx.fillStyle = "#d65143";
+    ctx.beginPath();
+    ctx.roundRect(x + 64, y + 62, 42, 26, 5);
+    ctx.fill();
+
+    ctx.fillStyle = "#fff0b8";
+    ctx.strokeStyle = "#55372b";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x + 22, y + 13, 88, 23, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#48332a";
+    ctx.font = "800 10px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("BAIT & REGRET", x + 66, y + 25);
+
+    drawCrate(baitShack.counterX - 14, baitShack.counterY + 8, "#6f6045");
+    drawCrate(baitShack.counterX + 30, baitShack.counterY + 26, "#3f7890");
+  }
+
+  function drawLegionHall() {
+    const x = screenX(legionHall.x);
+    const y = screenY(legionHall.y);
+    ctx.fillStyle = "rgba(36, 33, 27, 0.24)";
+    ctx.fillRect(x - 8, y + 12, 176, 104);
+
+    ctx.fillStyle = "#dad0bc";
+    ctx.fillRect(x, y + 34, 150, 84);
+    ctx.fillStyle = "#74342f";
+    ctx.beginPath();
+    ctx.moveTo(x - 12, y + 42);
+    ctx.lineTo(x + 75, y - 8);
+    ctx.lineTo(x + 162, y + 42);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#40342d";
+    ctx.fillRect(x + 56, y + 74, 38, 44);
+    ctx.fillStyle = "rgba(255, 246, 185, 0.74)";
+    ctx.fillRect(x + 18, y + 64, 24, 18);
+    ctx.fillRect(x + 108, y + 64, 24, 18);
+
+    ctx.fillStyle = "#fff0b8";
+    ctx.strokeStyle = "#5b332c";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x + 28, y + 14, 94, 24, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#4b3328";
+    ctx.font = "800 10px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("LEGION-ish", x + 75, y + 27);
+
+    drawCrate(legionHall.counterX - 8, legionHall.counterY + 6, "#8a573e");
+  }
+
+  function drawBlueRocket() {
+    const x = screenX(blueRocket.x);
+    const y = screenY(blueRocket.y);
+    ctx.fillStyle = "rgba(34, 31, 27, 0.26)";
+    ctx.beginPath();
+    ctx.ellipse(x + 12, y + 36, 36, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#286aa5";
+    ctx.strokeStyle = "#163f66";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - 18, y - 24, 46, 72, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#b8e1f2";
+    ctx.fillRect(x - 8, y - 12, 26, 13);
+    ctx.fillStyle = "#174164";
+    ctx.font = "800 8px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("BLUE", x + 5, y + 14);
+    ctx.fillText("ROCKET", x + 5, y + 25);
+  }
+
+  function drawFerryLookout() {
+    const x = screenX(ferryLookout.x);
+    const y = screenY(ferryLookout.y);
+    ctx.fillStyle = "rgba(42, 34, 24, 0.22)";
+    ctx.beginPath();
+    ctx.ellipse(x + 22, y + 28, 62, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#b75c34";
+    ctx.fillRect(x - 42, y + 18, 108, 10);
+    ctx.fillStyle = "#6d4930";
+    ctx.fillRect(x - 32, y + 24, 10, 28);
+    ctx.fillRect(x + 48, y + 24, 10, 28);
+    ctx.strokeStyle = "#65432e";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x - 18, y + 10);
+    ctx.lineTo(x + 44, y - 22);
+    ctx.stroke();
+    ctx.fillStyle = "#fff0b8";
+    ctx.strokeStyle = "#5b332c";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - 30, y - 42, 104, 28, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#4b3328";
+    ctx.font = "800 9px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("SCENIC DITCH", x + 22, y - 28);
+  }
+
   function drawTractorShed() {
     const x = screenX(tractorShed.x);
     const y = screenY(tractorShed.y);
@@ -2386,7 +2960,7 @@
       ctx.font = "700 8px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(item.type === "domePolish" ? "BUG" : item.type === "modelKit" ? "KIT" : "OWE", sx, sy - 2);
+      ctx.fillText(type.tag || type.shortName.slice(0, 3).toUpperCase(), sx, sy - 2);
       ctx.restore();
     }
   }
@@ -2896,6 +3470,26 @@
     ctx.fill();
   }
 
+  function drawRoadHazard(hazard) {
+    const sx = screenX(hazard.x);
+    const sy = screenY(hazard.y);
+    if (sx < -70 || sx > canvas.clientWidth + 70 || sy < -70 || sy > canvas.clientHeight + 70) return;
+    ctx.fillStyle = "rgba(27, 24, 22, 0.54)";
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, hazard.r * 1.55, hazard.r, -0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 223, 128, 0.46)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, hazard.r * 1.75, hazard.r * 1.18, -0.18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255, 244, 184, 0.64)";
+    ctx.font = "900 11px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("!", sx, sy - hazard.r - 8);
+  }
+
   function drawStrip(x, y, w, h, fill) {
     ctx.fillStyle = fill;
     ctx.fillRect(screenX(x), screenY(y), w, h);
@@ -2924,7 +3518,11 @@
     if (Math.abs(y - drivewayY) < 42 && x > -285 && x < roadLeft + 24) return "driveway";
     if (Math.abs(y - (hardwareStore.y + 92)) < 44 && x > hardwareStore.x + 60 && x < roadLeft + 24) return "driveway";
     if (Math.abs(y - (yardSale.y + 84)) < 44 && x > yardSale.x + 70 && x < roadLeft + 24) return "driveway";
+    if (Math.abs(y - (baitShack.y + 92)) < 44 && x > baitShack.x + 72 && x < roadLeft + 24) return "driveway";
+    if (Math.abs(y - (legionHall.y + 92)) < 46 && x > legionHall.x + 76 && x < roadLeft + 24) return "driveway";
     if (Math.abs(y - tractorShed.y) < 44 && x > roadRight - 24 && x < tractorShed.x + 24) return "driveway";
+    if (Math.abs(y - blueRocket.y) < 42 && x > roadRight - 24 && x < blueRocket.x + 30) return "driveway";
+    if (Math.abs(y - ferryLookout.y) < 42 && x > roadRight - 24 && x < ferryLookout.x + 36) return "driveway";
     if (isInRiver({ x, y })) return "river";
     if (x < roadLeft) return "yard";
     return "farm";
@@ -2932,9 +3530,14 @@
 
   function placeName(x, y) {
     if (distance({ x, y }, garageDrop) < garageDrop.r) return "Rob's garage";
+    if (!isSouthRoadUnlocked() && Math.abs(y - southGate.y) < 130) return southGate.name;
     if (distance({ x, y }, { x: hardwareStore.x + 66, y: hardwareStore.y + 64 }) < 145) return hardwareStore.name;
     if (distance({ x, y }, { x: yardSale.x + 68, y: yardSale.y + 64 }) < 150) return yardSale.name;
     if (distance({ x, y }, tractorShed) < 155) return tractorShed.name;
+    if (distance({ x, y }, { x: baitShack.x + 70, y: baitShack.y + 66 }) < 155) return baitShack.name;
+    if (distance({ x, y }, { x: legionHall.x + 76, y: legionHall.y + 70 }) < 170) return legionHall.name;
+    if (distance({ x, y }, blueRocket) < 130) return blueRocket.name;
+    if (distance({ x, y }, ferryLookout) < 145) return ferryLookout.name;
     if (distance({ x, y }, homeDoor) < 140) return "Rob's place";
     if (surfaceAt(x, y) === "river") return "River";
     if (surfaceAt(x, y) === "road") return y < 0 ? "North road" : "South road";
