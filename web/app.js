@@ -17,6 +17,10 @@
   const missionOverlay = document.querySelector("#missionOverlay");
   const missionList = document.querySelector("#missionList");
   const missionClose = document.querySelector("#missionClose");
+  const endingOverlay = document.querySelector("#endingOverlay");
+  const endingClose = document.querySelector("#endingClose");
+  const endingCanvas = document.querySelector("#endingCanvas");
+  const endingCtx = endingCanvas.getContext("2d");
 
   const world = {
     minX: -760,
@@ -367,6 +371,7 @@
 
   const starterMissionIds = ["domePolishRun", "modelKitSnatch", "apologyCigars"];
   const southMissionIds = ["clamatoCeasefire", "septicDiplomacy"];
+  const allMissionIds = Object.keys(missionDefs);
 
   const worldItems = [
     createWorldItem("domePolish", hardwareStore.counterX, hardwareStore.counterY, "hardware", "domePolishRun"),
@@ -690,11 +695,16 @@
   let introReady = false;
   let introSkipClicks = 0;
   let introLastSkipClickAt = 0;
+  let introCheatBuffer = "";
+  let introLastCheatAt = 0;
   let introUnlockTimer = 0;
   let introSkipResetTimer = 0;
   let lastTime = performance.now();
   let toastUntil = 0;
   let lastSouthGateScoldAt = 0;
+  let endgameReady = false;
+  let dayEnded = false;
+  let duskStartedAt = 0;
 
   const audio = {
     context: null,
@@ -737,6 +747,8 @@
 
   window.addEventListener("resize", resize);
   window.addEventListener("keydown", (event) => {
+    if (!gameStarted && tryHandleIntroCheat(event)) return;
+
     const key = normalizeKey(event);
     if (!key) return;
     event.preventDefault();
@@ -745,6 +757,10 @@
         if (introReady) startGame();
         else handleIntroImpatience();
       }
+      return;
+    }
+    if (!endingOverlay.hidden) {
+      if (key === "action" || key === "escape") closeEndingOverlay();
       return;
     }
     if (key === "mission") {
@@ -790,6 +806,7 @@
   introScroll.addEventListener("animationend", unlockIntro, { once: true });
   missionButton.addEventListener("click", openMissionBrowser);
   missionClose.addEventListener("click", closeMissionBrowser);
+  endingClose.addEventListener("click", closeEndingOverlay);
 
   resize();
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -804,7 +821,77 @@
     lastTime = now;
     update(dt, now);
     draw(now);
+    drawEndingScene(now);
     requestAnimationFrame(loop);
+  }
+
+  function tryHandleIntroCheat(event) {
+    const letter = event.key && event.key.length === 1 ? event.key.toUpperCase() : "";
+    if (!letter) return false;
+
+    const cheat = "END";
+    const now = performance.now();
+    if (now - introLastCheatAt > 1800) introCheatBuffer = "";
+
+    introLastCheatAt = now;
+    introCheatBuffer = `${introCheatBuffer}${letter}`.slice(-cheat.length);
+
+    if (introCheatBuffer.endsWith(cheat)) {
+      event.preventDefault();
+      introCheatBuffer = "";
+      triggerEndingCheat();
+      return true;
+    }
+
+    const pendingCheat = cheat.startsWith(introCheatBuffer) || letter === cheat[0];
+    if (pendingCheat) event.preventDefault();
+    return pendingCheat;
+  }
+
+  function triggerEndingCheat() {
+    window.clearTimeout(introUnlockTimer);
+    window.clearTimeout(introSkipResetTimer);
+    initAudio();
+    gameStarted = true;
+    introReady = true;
+    introOverlay.hidden = true;
+    closeMissionBrowser();
+    clearMovementInput();
+    inventory.slots = [];
+    inventory.selected = 0;
+
+    for (const [missionId, state] of Object.entries(missionStates)) {
+      const def = missionDefs[missionId];
+      state.unlocked = true;
+      state.complete = true;
+      state.state = "complete";
+      if (state.legIndex !== undefined) state.legIndex = missionLegCount(def) - 1;
+    }
+
+    for (const item of worldItems) {
+      item.carried = false;
+      item.delivered = true;
+    }
+
+    activeMissionId = "septicDiplomacy";
+    endgameReady = true;
+    dayEnded = true;
+    duskStartedAt = performance.now() - 12000;
+    rob.mode = "home";
+    rob.x = homeDoor.x;
+    rob.y = homeDoor.y;
+    bike.x = -64;
+    bike.y = drivewayY;
+    bike.heading = -Math.PI / 2;
+    bike.speed = 0;
+    bike.fallen = false;
+    camera.x = -170;
+    camera.y = 40;
+
+    renderMissionBrowser();
+    playMissionCompleteSound();
+    showEndingOverlay();
+    say("END accepted: Rob bypasses commerce and reports directly to the couch-based monster movie incident.", 4.8);
   }
 
   function handleIntroStartClick() {
@@ -971,10 +1058,7 @@
           playBikeStartSound();
           say("Rob climbs onto the Suzuki. Acrylic dome status: deeply unnecessary.", 3.5);
         } else if (!interacted && distance(rob, homeDoor) < 52) {
-          rob.mode = "home";
-          rob.x = homeDoor.x;
-          rob.y = homeDoor.y;
-          say("Rob goes back inside. Probably forgot something suspiciously specific.", 3);
+          enterHome();
         }
       }
     } else {
@@ -1028,6 +1112,39 @@
     if (rob.mode === "foot" && tryTalkToNearbyNpc(actor)) return true;
     if (rob.mode === "foot" && tryInspectNearbyDiscovery(actor)) return true;
     return false;
+  }
+
+  function enterHome() {
+    rob.mode = "home";
+    rob.x = homeDoor.x;
+    rob.y = homeDoor.y;
+
+    if (endgameReady && !dayEnded) {
+      finishRobDay();
+      return;
+    }
+
+    say(dayEnded ? "Rob remains indoors. The monster movies have subtitles and the snacks have opinions." : "Rob goes back inside. Probably forgot something suspiciously specific.", 3);
+  }
+
+  function finishRobDay() {
+    dayEnded = true;
+    closeMissionBrowser();
+    clearMovementInput();
+    bike.speed = 0;
+    playMissionCompleteSound();
+    showEndingOverlay();
+    say("Day complete: Rob returns home to old Japanese monster movies and edible entertainment with questionable steering advice.", 5.2);
+  }
+
+  function showEndingOverlay() {
+    endingOverlay.hidden = false;
+    endingClose.focus();
+  }
+
+  function closeEndingOverlay() {
+    endingOverlay.hidden = true;
+    say("Rob keeps loitering in the afterglow. Somewhere on the TV, a rubber-suit monster sues a lighthouse.", 3.8);
   }
 
   function tryUprightBike(actor) {
@@ -1113,11 +1230,14 @@
     playMissionCompleteSound();
     const unlocked = unlockMissions(def.unlocks);
     const openedSouth = maybeUnlockSouthRoad();
+    const startedEvening = maybeBeginEndgame();
     renderMissionBrowser();
-    if (unlocked.length || openedSouth) {
+    if (startedEvening) {
+      closeMissionBrowser();
+    } else if (unlocked.length || openedSouth) {
       window.setTimeout(openMissionBrowser, 900);
     }
-    say(`${def.completeText}${openedSouth ? " The road crew grudgingly opens the south road, unlocking two lower-road errands with worse smells and better paperwork." : ""}`, openedSouth ? 6.5 : 5);
+    say(`${def.completeText}${openedSouth ? " The road crew grudgingly opens the south road, unlocking two lower-road errands with worse smells and better paperwork." : ""}${startedEvening ? " The day starts sagging into evening. Head home for monster movies and snacks that make the couch feel advisory." : ""}`, openedSouth || startedEvening ? 6.5 : 5);
     return true;
   }
 
@@ -1267,6 +1387,10 @@
   }
 
   function activeMissionTarget() {
+    if (endgameReady && !dayEnded) {
+      return { x: homeDoor.x, y: homeDoor.y, r: 64, label: "Go home", place: "Rob's house" };
+    }
+
     const def = activeMissionDef();
     const state = activeMissionState();
     const leg = currentMissionLeg(def, state);
@@ -1315,6 +1439,17 @@
     return unlockMissions(southMissionIds).length > 0;
   }
 
+  function allMissionsComplete() {
+    return allMissionIds.every((id) => missionStates[id] && missionStates[id].complete);
+  }
+
+  function maybeBeginEndgame() {
+    if (endgameReady || !allMissionsComplete()) return false;
+    endgameReady = true;
+    duskStartedAt = performance.now();
+    return true;
+  }
+
   function ensureMissionItem(missionId) {
     const def = missionDefs[missionId];
     const state = missionStates[missionId];
@@ -1327,6 +1462,9 @@
   }
 
   function missionStatusText() {
+    if (dayEnded) return "Evening achieved";
+    if (endgameReady) return "Head home";
+
     const def = activeMissionDef();
     const state = activeMissionState();
     if (!def || !state) return "No mission";
@@ -1336,6 +1474,9 @@
   }
 
   function missionGuideText() {
+    if (dayEnded) return "Rob is home with old monster movies, edible entertainment, and no remaining respect for daylight.";
+    if (endgameReady) return "All five errands are done. Head back to Rob's house and press E at the front door to surrender to the evening.";
+
     const def = activeMissionDef();
     const state = activeMissionState();
     const leg = currentMissionLeg(def, state);
@@ -1359,6 +1500,7 @@
       if (rob.panicUntil > performance.now()) return "Rob is moving himself out of traffic before his obituary becomes a roadside anecdote.";
       if (isInRiver(rob)) return "Rob is swimming. Aim for the red bank unless he wants his boots classified as soup.";
       if (!isSouthRoadUnlocked() && Math.abs(rob.y - southGate.y) < 140) return `South road blocked: finish ${2 - completedStarterMissionCount()} more starter errand${2 - completedStarterMissionCount() === 1 ? "" : "s"} to open it.`;
+      if (endgameReady && !dayEnded && distance(rob, homeDoor) < 76) return "Home is right here. Press E to retire from commerce and enter the monster-movie snack dimension.";
       if (canDeliverActiveMission(actor)) return "Drop-off is right here.";
 
       const item = nearestWorldItem(actor, 74);
@@ -1372,11 +1514,13 @@
 
       if (bike.fallen && distance(rob, bike) < 92) return "The Suzuki is lying down like a tired vending machine. Press E to stand it back up.";
       if (distance(rob, bike) < 72) return "The cruiser is within climbing distance.";
+      if (endgameReady && !dayEnded) return "All errands are done. The couch is summoning Rob with supernatural upholstery.";
       if (distance(rob, homeDoor) < 64) return "The front door is close if Rob needs to retreat from consequences.";
     }
 
     if (rob.mode === "bike" && Math.abs(bike.speed) < 34) {
       if (!isSouthRoadUnlocked() && Math.abs(bike.y - southGate.y) < 150) return `South road blocked: finish ${2 - completedStarterMissionCount()} more starter errand${2 - completedStarterMissionCount() === 1 ? "" : "s"} to open it.`;
+      if (endgameReady && !dayEnded && distance(bike, homeDoor) < 92) return "Home is close. Park the cruiser, dismount, and go receive couch-based cinema therapy.";
       if (canDeliverActiveMission(actor)) return "The drop-off is close enough for Rob to make it official.";
       const item = nearestWorldItem(actor, 74);
       if (item) return `Cargo is close: ${itemTypes[item.type].name}.`;
@@ -2067,6 +2211,7 @@
     drawMissionMarkers(now);
     drawBikeAndRob(now);
     drawPrompts(now);
+    drawEveningTint(width, height, now);
     drawVignette(width, height);
   }
 
@@ -2697,6 +2842,337 @@
     gradient.addColorStop(1, "rgba(10, 32, 24, 0.22)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+  }
+
+  function drawEveningTint(width, height, now) {
+    if (!endgameReady && !dayEnded) return;
+
+    const dusk = dayEnded ? 1 : clamp((now - duskStartedAt) / 12000, 0.18, 1);
+    const glow = ctx.createLinearGradient(0, 0, width, height);
+    glow.addColorStop(0, `rgba(255, 178, 98, ${0.1 * dusk})`);
+    glow.addColorStop(0.55, `rgba(137, 74, 106, ${0.16 * dusk})`);
+    glow.addColorStop(1, `rgba(18, 26, 48, ${0.3 * dusk})`);
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.globalAlpha = 0.34 * dusk;
+    ctx.fillStyle = "#f1b96f";
+    ctx.beginPath();
+    ctx.arc(width - 86, 96, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.5 * dusk;
+    ctx.fillStyle = "#fff0a8";
+    ctx.beginPath();
+    ctx.ellipse(screenX(homeDoor.x + 18), screenY(homeDoor.y + 6), 34, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawEndingScene(now) {
+    if (endingOverlay.hidden) return;
+
+    const width = endingCanvas.clientWidth;
+    const height = endingCanvas.clientHeight;
+    if (!width || !height) return;
+
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const pixelWidth = Math.floor(width * dpr);
+    const pixelHeight = Math.floor(height * dpr);
+    if (endingCanvas.width !== pixelWidth || endingCanvas.height !== pixelHeight) {
+      endingCanvas.width = pixelWidth;
+      endingCanvas.height = pixelHeight;
+    }
+
+    const ec = endingCtx;
+    ec.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ec.clearRect(0, 0, width, height);
+
+    const flicker = 0.5 + Math.sin(now / 95) * 0.06 + Math.sin(now / 37) * 0.035;
+    const room = ec.createLinearGradient(0, 0, width, height);
+    room.addColorStop(0, "#352342");
+    room.addColorStop(0.54, "#1d2e35");
+    room.addColorStop(1, "#111b22");
+    ec.fillStyle = room;
+    ec.fillRect(0, 0, width, height);
+
+    ec.fillStyle = "rgba(255, 184, 101, 0.18)";
+    ec.beginPath();
+    ec.arc(width * 0.11, height * 0.16, width * 0.1, 0, Math.PI * 2);
+    ec.fill();
+
+    ec.fillStyle = "#21313a";
+    ec.fillRect(0, height * 0.69, width, height * 0.31);
+    ec.strokeStyle = "rgba(255, 232, 164, 0.14)";
+    ec.lineWidth = 1;
+    for (let x = -20; x < width + 40; x += 34) {
+      ec.beginPath();
+      ec.moveTo(x, height);
+      ec.lineTo(x + 74, height * 0.69);
+      ec.stroke();
+    }
+
+    const tv = {
+      x: width * 0.57,
+      y: height * 0.13,
+      w: width * 0.34,
+      h: height * 0.4,
+    };
+    drawEndingTv(tv.x, tv.y, tv.w, tv.h, now, flicker);
+
+    const couchX = width * 0.09;
+    const couchY = height * 0.55;
+    const couchW = width * 0.5;
+    const couchH = height * 0.25;
+    ec.fillStyle = "rgba(3, 8, 10, 0.32)";
+    ec.beginPath();
+    ec.ellipse(couchX + couchW * 0.52, couchY + couchH * 0.93, couchW * 0.52, couchH * 0.16, 0, 0, Math.PI * 2);
+    ec.fill();
+
+    ec.fillStyle = "#6b3e4d";
+    ec.beginPath();
+    ec.roundRect(couchX, couchY + couchH * 0.22, couchW, couchH * 0.6, 12);
+    ec.fill();
+    ec.fillStyle = "#8b5260";
+    ec.beginPath();
+    ec.roundRect(couchX + 12, couchY, couchW - 24, couchH * 0.4, 12);
+    ec.fill();
+    ec.fillStyle = "#4d2d38";
+    ec.fillRect(couchX + 24, couchY + couchH * 0.72, couchW - 48, couchH * 0.12);
+
+    drawEndingRob(couchX + couchW * 0.42, couchY + couchH * 0.25, couchW, couchH, now);
+    drawEndingParrot(couchX + couchW * 0.12, couchY + couchH * 0.05, "#2d9e4e", "#d63e30", now);
+    drawEndingParrot(couchX + couchW * 0.86, couchY + couchH * 0.02, "#b8b531", "#ede05b", now + 700);
+    drawEndingSnackTray(width * 0.42, height * 0.79, width * 0.17, height * 0.1, now);
+
+    ec.fillStyle = "rgba(255, 240, 184, 0.78)";
+    ec.font = `800 ${Math.max(10, width * 0.024)}px system-ui, sans-serif`;
+    ec.textAlign = "center";
+    ec.textBaseline = "middle";
+    ec.fillText("END OF DAY: NO FURTHER COMMERCE", width * 0.5, height * 0.93);
+
+    ec.save();
+    ec.globalAlpha = 0.14 + flicker * 0.08;
+    ec.fillStyle = "#fff0a8";
+    ec.fillRect(0, 0, width, height);
+    ec.restore();
+  }
+
+  function drawEndingTv(x, y, w, h, now, flicker) {
+    const ec = endingCtx;
+    ec.fillStyle = "rgba(0, 0, 0, 0.36)";
+    ec.beginPath();
+    ec.ellipse(x + w * 0.5, y + h * 1.2, w * 0.55, h * 0.12, 0, 0, Math.PI * 2);
+    ec.fill();
+
+    ec.fillStyle = "#12171c";
+    ec.beginPath();
+    ec.roundRect(x - 10, y - 8, w + 20, h + 18, 12);
+    ec.fill();
+    ec.fillStyle = "#26343b";
+    ec.beginPath();
+    ec.roundRect(x, y, w, h, 8);
+    ec.fill();
+
+    const screenX = x + w * 0.07;
+    const screenY = y + h * 0.08;
+    const screenW = w * 0.86;
+    const screenH = h * 0.73;
+    const screen = ec.createLinearGradient(screenX, screenY, screenX + screenW, screenY + screenH);
+    screen.addColorStop(0, `rgba(91, 172, 177, ${0.76 + flicker * 0.1})`);
+    screen.addColorStop(1, `rgba(21, 38, 58, ${0.96})`);
+    ec.fillStyle = screen;
+    ec.beginPath();
+    ec.roundRect(screenX, screenY, screenW, screenH, 5);
+    ec.fill();
+
+    ec.fillStyle = "#24313f";
+    ec.fillRect(screenX, screenY + screenH * 0.62, screenW, screenH * 0.38);
+    ec.fillStyle = "#d6c7a6";
+    for (let i = 0; i < 7; i += 1) {
+      const bx = screenX + i * screenW * 0.13 + Math.sin(now / 400 + i) * 2;
+      const bh = screenH * (0.12 + (i % 3) * 0.07);
+      ec.fillRect(bx, screenY + screenH * 0.62 - bh, screenW * 0.07, bh);
+    }
+
+    const stomp = Math.sin(now / 240);
+    const mx = screenX + screenW * 0.55 + stomp * screenW * 0.05;
+    const my = screenY + screenH * 0.52;
+    ec.fillStyle = "#1b2b28";
+    ec.beginPath();
+    ec.ellipse(mx, my, screenW * 0.13, screenH * 0.28, 0.08, 0, Math.PI * 2);
+    ec.fill();
+    ec.beginPath();
+    ec.arc(mx + screenW * 0.08, my - screenH * 0.22, screenW * 0.07, 0, Math.PI * 2);
+    ec.fill();
+
+    ec.strokeStyle = "#1b2b28";
+    ec.lineWidth = Math.max(3, screenW * 0.02);
+    ec.lineCap = "round";
+    ec.beginPath();
+    ec.moveTo(mx - screenW * 0.12, my + screenH * 0.1);
+    ec.lineTo(mx - screenW * 0.3, my + screenH * 0.22 + stomp * 4);
+    ec.moveTo(mx + screenW * 0.05, my - screenH * 0.06);
+    ec.lineTo(mx + screenW * 0.22, my - screenH * 0.15 + stomp * 8);
+    ec.moveTo(mx + screenW * 0.02, my + screenH * 0.2);
+    ec.lineTo(mx - screenW * 0.03, my + screenH * 0.36);
+    ec.moveTo(mx + screenW * 0.1, my + screenH * 0.18);
+    ec.lineTo(mx + screenW * 0.18, my + screenH * 0.35);
+    ec.stroke();
+
+    ec.fillStyle = "#d9cf9e";
+    for (let i = 0; i < 6; i += 1) {
+      ec.beginPath();
+      ec.moveTo(mx - screenW * 0.03 + i * screenW * 0.025, my - screenH * 0.25 + i * 1.2);
+      ec.lineTo(mx + screenW * 0.02 + i * screenW * 0.025, my - screenH * 0.33 + i * 1.2);
+      ec.lineTo(mx + screenW * 0.05 + i * screenW * 0.025, my - screenH * 0.23 + i * 1.2);
+      ec.closePath();
+      ec.fill();
+    }
+
+    ec.fillStyle = "rgba(255, 245, 200, 0.92)";
+    ec.font = `900 ${Math.max(10, screenW * 0.09)}px system-ui, sans-serif`;
+    ec.textAlign = "left";
+    ec.textBaseline = "top";
+    ec.fillText("ROAR!", screenX + screenW * 0.08, screenY + screenH * 0.08);
+
+    ec.strokeStyle = `rgba(255, 255, 255, ${0.08 + flicker * 0.06})`;
+    ec.lineWidth = 1;
+    for (let sy = screenY + 5; sy < screenY + screenH; sy += 9) {
+      ec.beginPath();
+      ec.moveTo(screenX + 4, sy);
+      ec.lineTo(screenX + screenW - 4, sy);
+      ec.stroke();
+    }
+
+    ec.fillStyle = "#101416";
+    ec.fillRect(x + w * 0.42, y + h + 10, w * 0.16, h * 0.12);
+    ec.fillRect(x + w * 0.24, y + h * 1.08, w * 0.52, h * 0.07);
+    ec.fillStyle = "#f1d77b";
+    ec.font = `800 ${Math.max(8, w * 0.045)}px system-ui, sans-serif`;
+    ec.textAlign = "center";
+    ec.textBaseline = "middle";
+    ec.fillText("MONSTER MOVIE", x + w * 0.5, y + h * 0.9);
+  }
+
+  function drawEndingRob(x, y, couchW, couchH, now) {
+    const ec = endingCtx;
+    const breathing = Math.sin(now / 520) * 2;
+    ec.save();
+    ec.translate(x, y + breathing);
+
+    ec.fillStyle = "#23313a";
+    ec.beginPath();
+    ec.ellipse(0, couchH * 0.48, couchW * 0.18, couchH * 0.26, -0.12, 0, Math.PI * 2);
+    ec.fill();
+    ec.fillStyle = "#506574";
+    ec.beginPath();
+    ec.roundRect(-couchW * 0.14, couchH * 0.27, couchW * 0.24, couchH * 0.27, 10);
+    ec.fill();
+
+    ec.strokeStyle = "#1b2024";
+    ec.lineCap = "round";
+    ec.lineWidth = Math.max(5, couchW * 0.018);
+    ec.beginPath();
+    ec.moveTo(-couchW * 0.08, couchH * 0.5);
+    ec.lineTo(-couchW * 0.2, couchH * 0.72);
+    ec.moveTo(couchW * 0.04, couchH * 0.5);
+    ec.lineTo(couchW * 0.17, couchH * 0.69);
+    ec.stroke();
+
+    ec.fillStyle = "#d7a173";
+    ec.beginPath();
+    ec.arc(-couchW * 0.04, couchH * 0.18, couchW * 0.06, 0, Math.PI * 2);
+    ec.fill();
+    ec.fillStyle = "#e7dfd3";
+    ec.beginPath();
+    ec.arc(-couchW * 0.02, couchH * 0.2, couchW * 0.034, 0, Math.PI * 2);
+    ec.fill();
+    ec.strokeStyle = "#e7dfd3";
+    ec.lineWidth = 3;
+    ec.beginPath();
+    ec.arc(-couchW * 0.045, couchH * 0.21, couchW * 0.045, 0.25, 1.5);
+    ec.stroke();
+
+    ec.strokeStyle = "rgba(206, 236, 255, 0.62)";
+    ec.fillStyle = "rgba(202, 236, 255, 0.12)";
+    ec.lineWidth = 2;
+    ec.beginPath();
+    ec.arc(-couchW * 0.04, couchH * 0.18, couchW * 0.12 + Math.sin(now / 700) * 1.5, 0, Math.PI * 2);
+    ec.fill();
+    ec.stroke();
+
+    ec.fillStyle = "#1a1d20";
+    ec.beginPath();
+    ec.ellipse(-couchW * 0.18, couchH * 0.75, couchW * 0.05, couchH * 0.035, 0, 0, Math.PI * 2);
+    ec.ellipse(couchW * 0.18, couchH * 0.72, couchW * 0.05, couchH * 0.035, 0, 0, Math.PI * 2);
+    ec.fill();
+    ec.restore();
+  }
+
+  function drawEndingParrot(x, y, body, head, now) {
+    const ec = endingCtx;
+    const bob = Math.sin(now / 220) * 3;
+    ec.save();
+    ec.translate(x, y + bob);
+    ec.fillStyle = "rgba(0, 0, 0, 0.18)";
+    ec.beginPath();
+    ec.ellipse(2, 24, 18, 6, 0, 0, Math.PI * 2);
+    ec.fill();
+    ec.fillStyle = body;
+    ec.beginPath();
+    ec.ellipse(0, 8, 10, 17, -0.25, 0, Math.PI * 2);
+    ec.fill();
+    ec.fillStyle = head;
+    ec.beginPath();
+    ec.arc(7, -6, 8, 0, Math.PI * 2);
+    ec.fill();
+    ec.fillStyle = "#222";
+    ec.beginPath();
+    ec.arc(10, -8, 1.6, 0, Math.PI * 2);
+    ec.fill();
+    ec.strokeStyle = body;
+    ec.lineWidth = 4;
+    ec.beginPath();
+    ec.moveTo(-8, 5);
+    ec.lineTo(-22, -2 + Math.sin(now / 120) * 4);
+    ec.stroke();
+    ec.restore();
+  }
+
+  function drawEndingSnackTray(x, y, w, h, now) {
+    const ec = endingCtx;
+    ec.fillStyle = "rgba(0, 0, 0, 0.26)";
+    ec.beginPath();
+    ec.ellipse(x + w * 0.5, y + h * 0.7, w * 0.6, h * 0.2, 0, 0, Math.PI * 2);
+    ec.fill();
+    ec.fillStyle = "#4a342c";
+    ec.beginPath();
+    ec.roundRect(x, y, w, h * 0.45, 8);
+    ec.fill();
+    ec.fillStyle = "#f3d187";
+    ec.font = `900 ${Math.max(8, w * 0.12)}px system-ui, sans-serif`;
+    ec.textAlign = "center";
+    ec.textBaseline = "middle";
+    ec.fillText("SNACKS", x + w * 0.5, y + h * 0.24);
+
+    const colors = ["#ff6f91", "#ffe66d", "#76e0a3", "#8cc8ff", "#cf8cff"];
+    for (let i = 0; i < 9; i += 1) {
+      const gx = x + w * (0.14 + (i % 5) * 0.18);
+      const gy = y - h * 0.14 + Math.floor(i / 5) * h * 0.22;
+      const pulse = 1 + Math.sin(now / 180 + i) * 0.18;
+      ec.fillStyle = colors[i % colors.length];
+      ec.beginPath();
+      ec.arc(gx, gy, Math.max(3, w * 0.035) * pulse, 0, Math.PI * 2);
+      ec.fill();
+      ec.strokeStyle = `rgba(255, 255, 255, ${0.3 + Math.sin(now / 150 + i) * 0.2})`;
+      ec.beginPath();
+      ec.arc(gx, gy, Math.max(6, w * 0.06) * pulse, 0, Math.PI * 2);
+      ec.stroke();
+    }
   }
 
   function drawHardwareStore() {

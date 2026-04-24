@@ -574,6 +574,7 @@ Current playable scope:
 - Completing two of the three starter errands opens the south road past a barricade and unlocks the next pair of missions.
 - Multi-leg missions can now chain ordered pickup/drop stages, where finishing the first task reveals the next item or objective.
 - South-road missions currently include Clamato Ceasefire and Septic Diplomacy.
+- Completing all five missions starts the end-of-day flow: the target marker points Rob home, dusk lighting rolls in, and entering the house triggers the finale.
 - A mission browser lets the player switch the active errand.
 - A bottom mission dock provides wrapped guidance for the current mission and nearby walk-around interactions.
 - The target marker points toward the current mission pickup, dropped mission item, or delivery point.
@@ -586,6 +587,7 @@ Current playable scope:
 - The river is now a swimmable terrain zone for on-foot Rob, with a separate head-and-arms swim animation and slower movement.
 - On-foot NPCs detect Rob approaching on the motorcycle, run away with panic bubbles, and cannot be run over.
 - Larger lower-road potholes add a speed-management challenge: moderate hits wobble and slow the bike, while excessive speed can knock it over.
+- The current finale sends Rob home for old Japanese monster movies and suspicious edible entertainment after his fifth mission, with an animated couch-and-TV inset canvas in the ending overlay.
 - Rob's on-foot walk cycle has alternating leg/arm swing and body bob.
 - Procedural sound effects add ambience, birds, motorcycle engine rumble, horn, and inventory/mission cues.
 - The speedometer displays a scaled rural-road `km/h` value instead of raw world units.
@@ -599,6 +601,7 @@ Prototype controls:
 - `F`: use selected inventory item.
 - `1`, `2`, `3`: select inventory slot.
 - `Shift`: move faster on foot.
+- `END` on the intro screen: testing shortcut straight to the end-of-day couch animation.
 
 ## Open Questions
 

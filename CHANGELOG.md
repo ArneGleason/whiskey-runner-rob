@@ -2,6 +2,15 @@
 
 All notable local prototype milestones for Whiskey Runner Rob are tracked here.
 
+## 0.8.0 - End of Day Finale
+
+- Added an end-of-day state after all five missions are complete.
+- Added a final return-home objective with mission guidance and a home-door target marker.
+- Added dusk lighting that rolls in once the last errand is done.
+- Added an ending overlay where Rob settles in for old Japanese monster movies and suspicious edible entertainment.
+- Added an animated inset canvas to the ending with couch Rob, parrots, glowing snacks, and a flickering monster movie on TV.
+- Added the intro cheat code `END` to jump directly to the ending animation for testing.
+
 ## 0.7.0 - South Road Mission Expansion
 
 - Added a gated south-road section that opens after Rob completes two of the three starter errands.
