@@ -579,6 +579,8 @@ Current playable scope:
 - Road vehicles detect Rob, brake, and steer toward the shoulder to avoid him.
 - On-foot Rob automatically panic-dodges out of the way when traffic or field equipment gets too close.
 - Motorcycle impacts can knock the cruiser down; Rob must dismount, stand beside it, and press `E` to pick it back up.
+- The river is now a swimmable terrain zone for on-foot Rob, with a separate head-and-arms swim animation and slower movement.
+- On-foot NPCs detect Rob approaching on the motorcycle, run away with panic bubbles, and cannot be run over.
 - Rob's on-foot walk cycle has alternating leg/arm swing and body bob.
 - Procedural sound effects add ambience, birds, motorcycle engine rumble, horn, and inventory/mission cues.
 - The speedometer displays a scaled rural-road `km/h` value instead of raw world units.

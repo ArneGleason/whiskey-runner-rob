@@ -26,6 +26,9 @@
     roadX: 0,
     roadWidth: 156,
     roadShoulder: 36,
+    riverLeft: -760,
+    riverRight: -585,
+    riverBankWidth: 22,
   };
 
   const homeDoor = { x: -292, y: 46 };
@@ -53,6 +56,7 @@
     panicVectorX: 0,
     panicVectorY: 0,
     lastPanicSayAt: 0,
+    wasSwimming: false,
   };
 
   const camera = {
@@ -1029,6 +1033,7 @@
     const actor = actorPoint();
     if (rob.mode === "foot") {
       if (rob.panicUntil > performance.now()) return "Rob is moving himself out of traffic before his obituary becomes a roadside anecdote.";
+      if (isInRiver(rob)) return "Rob is swimming. Aim for the red bank unless he wants his boots classified as soup.";
       if (canDeliverActiveMission(actor)) return "Drop-off is right here.";
 
       const item = nearestWorldItem(actor, 74);
@@ -1251,11 +1256,9 @@
 
   function updateWorldLife(dt, now) {
     for (const npc of npcs) {
-      const driftX = Math.sin(now / 1700 + npc.phase) * npc.radiusX;
-      const driftY = Math.cos(now / 2100 + npc.phase * 1.7) * npc.radiusY;
-      npc.x += (npc.baseX + driftX - npc.x) * Math.min(1, dt * 1.8);
-      npc.y += (npc.baseY + driftY - npc.y) * Math.min(1, dt * 1.8);
+      updateNpc(npc, dt, now);
     }
+    updateNpcBikeThreats(dt, now);
 
     for (const vehicle of roadVehicles) {
       updateRoadVehicle(vehicle, dt, now);
@@ -1269,6 +1272,101 @@
     for (const combine of combines) {
       updateCombine(combine, dt, now);
     }
+  }
+
+  function updateNpc(npc, dt, now) {
+    if (npc.panicUntil > now) {
+      const speed = 238;
+      npc.x += (npc.panicVectorX || 0) * speed * dt;
+      npc.y += (npc.panicVectorY || 0) * speed * dt;
+      constrainPoint(npc, 10);
+      return;
+    }
+
+    const driftX = Math.sin(now / 1700 + npc.phase) * npc.radiusX;
+    const driftY = Math.cos(now / 2100 + npc.phase * 1.7) * npc.radiusY;
+    npc.x += (npc.baseX + driftX - npc.x) * Math.min(1, dt * 1.8);
+    npc.y += (npc.baseY + driftY - npc.y) * Math.min(1, dt * 1.8);
+  }
+
+  function updateNpcBikeThreats(dt, now) {
+    if (rob.mode !== "bike" || bike.fallen) return;
+
+    const forwardX = Math.cos(bike.heading);
+    const forwardY = Math.sin(bike.heading);
+    const bikeSpeed = Math.abs(bike.speed);
+
+    for (const npc of npcs) {
+      const dx = npc.x - bike.x;
+      const dy = npc.y - bike.y;
+      const ahead = dx * forwardX + dy * forwardY;
+      const lateral = Math.abs(dx * forwardY - dy * forwardX);
+      const npcDistance = Math.hypot(dx, dy);
+      const inPath = ahead > -20 && ahead < 190 && lateral < 66;
+      const tooClose = npcDistance < 86;
+
+      if ((bikeSpeed > 16 && inPath) || tooClose) {
+        const urgency = clamp((190 - Math.max(0, ahead)) / 190, 0.2, 1);
+        triggerNpcPanic(npc, urgency, now);
+      }
+
+      if (npcDistance < 38) {
+        nudgeBikeAwayFromNpc(npc, dt, now);
+      }
+    }
+  }
+
+  function triggerNpcPanic(npc, urgency, now) {
+    const awayX = npc.x - bike.x;
+    const awayY = npc.y - bike.y;
+    const fallbackX = Math.sin(bike.heading);
+    const fallbackY = -Math.cos(bike.heading);
+    const mag = Math.hypot(awayX, awayY);
+    const runX = mag > 0.001 ? awayX / mag : fallbackX;
+    const runY = mag > 0.001 ? awayY / mag : fallbackY;
+
+    npc.panicVectorX = runX;
+    npc.panicVectorY = runY;
+    npc.panicUntil = Math.max(npc.panicUntil || 0, now + 1100 + urgency * 650);
+    npc.bubbleText = npcPanicText(npc);
+    npc.bubbleUntil = now + 1150;
+
+    if (!npc.lastPanicSayAt || now - npc.lastPanicSayAt > 2800) {
+      npc.lastPanicSayAt = now;
+      say(`${npc.name} evacuates Rob's projected dumbass radius.`, 2.2);
+    }
+  }
+
+  function nudgeBikeAwayFromNpc(npc, dt, now) {
+    const dx = bike.x - npc.x;
+    const dy = bike.y - npc.y;
+    const mag = Math.hypot(dx, dy) || 1;
+    bike.x += (dx / mag) * 48 * dt;
+    bike.y += (dy / mag) * 48 * dt;
+    bike.speed *= 0.42;
+    npc.x -= (dx / mag) * 42 * dt;
+    npc.y -= (dy / mag) * 42 * dt;
+    npc.panicUntil = Math.max(npc.panicUntil || 0, now + 1400);
+    npc.bubbleText = "AAAAAAAA!";
+    npc.bubbleUntil = now + 1200;
+    constrainPoint(npc, 10);
+    constrainPoint(bike, 24);
+
+    if (!npc.lastNearMissAt || now - npc.lastNearMissAt > 2200) {
+      npc.lastNearMissAt = now;
+      playDropSound();
+      say(`Near miss: ${npc.name} refuses to become a hood ornament on a motorcycle with no hood.`, 3);
+    }
+  }
+
+  function npcPanicText(npc) {
+    const lines = {
+      mavis: "NOT TODAY, DOME BOY!",
+      gord: "I'M TOO DAMP TO DIE!",
+      burt: "BRAKES, YOU CHROME IDIOT!",
+      darlene: "MY BREAD DOUGH SAW THAT!",
+    };
+    return lines[npc.id] || "AAAAAAAA!";
   }
 
   function updateRoadVehicle(vehicle, dt, now) {
@@ -1405,11 +1503,18 @@
 
     rob.x += rob.panicVectorX * rob.footSpeed * 2.2 * dt;
     rob.y += rob.panicVectorY * rob.footSpeed * 2.2 * dt;
-    constrainPoint(rob, 12);
+    constrainPoint(rob, 12, { allowRiver: true });
   }
 
   function checkBikeImpact(now) {
     if (rob.mode !== "bike" || bike.fallen) return;
+
+    for (const npc of npcs) {
+      if (distance(bike, npc) > 36) continue;
+      triggerNpcPanic(npc, 1, now);
+      nudgeBikeAwayFromNpc(npc, 1 / 30, now);
+      return;
+    }
 
     for (const vehicle of roadVehicles) {
       if (!isVehicleCollision(bike, vehicle, 42, 35)) continue;
@@ -1440,7 +1545,7 @@
     rob.panicVectorY = 0.2;
     rob.panicUntil = now + 520;
     clearMovementInput();
-    constrainPoint(rob, 12);
+    constrainPoint(rob, 12, { allowRiver: true });
     playCrashSound();
     say(`${text} Press E beside the bike to stand it back up.`, 4.2);
   }
@@ -1449,7 +1554,18 @@
     return Math.abs(a.x - b.x) < width && Math.abs(a.y - b.y) < height;
   }
 
+  function updateSwimmingState() {
+    const swimming = isInRiver(rob);
+    if (swimming && !rob.wasSwimming) {
+      say("Rob enters the river. The parrots are not certified lifeguards, but they are screaming like management.", 3.2);
+    } else if (!swimming && rob.wasSwimming) {
+      say("Rob sloshes back onto land smelling like ambition and river mud.", 2.8);
+    }
+    rob.wasSwimming = swimming;
+  }
+
   function updateOnFoot(dt, now) {
+    const swimming = isInRiver(rob);
     if (rob.panicUntil > now) {
       const speed = rob.footSpeed * 1.95;
       rob.x += rob.panicVectorX * speed * dt;
@@ -1457,7 +1573,7 @@
       rob.heading = Math.atan2(rob.panicVectorY, rob.panicVectorX);
       rob.isWalking = true;
       rob.walkTime += dt * 17;
-      constrainPoint(rob, 12);
+      constrainPoint(rob, 12, { allowRiver: true });
       return;
     }
 
@@ -1466,15 +1582,16 @@
     const mag = Math.hypot(xAxis, yAxis);
     rob.isWalking = mag > 0;
     if (mag > 0) {
-      const speed = rob.footSpeed * (input.run ? 1.35 : 1);
+      const speed = rob.footSpeed * (swimming ? 0.62 : input.run ? 1.35 : 1);
       rob.x += (xAxis / mag) * speed * dt;
       rob.y += (yAxis / mag) * speed * dt;
       rob.heading = Math.atan2(yAxis, xAxis);
-      rob.walkTime += dt * (input.run ? 13 : 10);
+      rob.walkTime += dt * (swimming ? 8.5 : input.run ? 13 : 10);
     } else {
       rob.walkTime += (0 - rob.walkTime) * Math.min(1, dt * 3);
     }
-    constrainPoint(rob, 12);
+    constrainPoint(rob, 12, { allowRiver: true });
+    updateSwimmingState();
   }
 
   function updateBike(dt) {
@@ -1510,8 +1627,8 @@
     bike.y += Math.sin(bike.heading) * bike.speed * dt;
     constrainPoint(bike, 24);
 
-    if (bike.x < -560) {
-      bike.x = -560;
+    if (bike.x < world.riverRight + world.riverBankWidth) {
+      bike.x = world.riverRight + world.riverBankWidth;
       bike.speed *= -0.15;
       say("The river bank votes no.", 1.7);
     }
@@ -1532,7 +1649,7 @@
       speedLabel.textContent = "0 km/h";
       placeLabel.textContent = "Rob's house";
     } else if (rob.mode === "foot") {
-      modeLabel.textContent = bike.fallen && distance(rob, bike) < 84 ? "Bike down" : distance(rob, bike) < 56 ? "By the bike" : "On foot";
+      modeLabel.textContent = isInRiver(rob) ? "Swimming" : bike.fallen && distance(rob, bike) < 84 ? "Bike down" : distance(rob, bike) < 56 ? "By the bike" : "On foot";
       speedLabel.textContent = "0 km/h";
       placeLabel.textContent = placeName(rob.x, rob.y);
     } else {
@@ -1600,14 +1717,15 @@
   }
 
   function drawRiver() {
-    const x = screenX(-700);
+    const x = screenX(world.riverLeft);
     const y = screenY(world.minY);
     const h = world.maxY - world.minY;
-    const river = ctx.createLinearGradient(x, 0, x + 250, 0);
+    const riverWidth = world.riverRight - world.riverLeft;
+    const river = ctx.createLinearGradient(x, 0, x + riverWidth, 0);
     river.addColorStop(0, "#3f8fc7");
     river.addColorStop(1, "#76c2d7");
     ctx.fillStyle = river;
-    ctx.fillRect(x, y, 240, h);
+    ctx.fillRect(x, y, riverWidth, h);
 
     ctx.save();
     ctx.strokeStyle = "rgba(255, 255, 255, 0.42)";
@@ -1615,7 +1733,7 @@
     for (let wy = world.minY; wy < world.maxY; wy += 190) {
       ctx.beginPath();
       for (let i = 0; i <= 8; i += 1) {
-        const wx = -680 + i * 26;
+        const wx = world.riverLeft + 26 + i * ((riverWidth - 52) / 8);
         const sy = screenY(wy + Math.sin(i * 0.8) * 10);
         const sx = screenX(wx);
         if (i === 0) ctx.moveTo(sx, sy);
@@ -1625,7 +1743,7 @@
     }
     ctx.restore();
 
-    drawStrip(-495, world.minY, 18, h, "#b55b32");
+    drawStrip(world.riverRight, world.minY, world.riverBankWidth, h, "#b55b32");
   }
 
   function drawFields() {
@@ -1949,39 +2067,50 @@
   function drawNpc(npc, now) {
     const sx = screenX(npc.x);
     const sy = screenY(npc.y);
-    const stride = Math.sin(now / 250 + npc.phase) * 2.6;
+    const panicking = npc.panicUntil > now;
+    const stride = Math.sin(now / (panicking ? 95 : 250) + npc.phase) * (panicking ? 6.2 : 2.6);
+    const lean = panicking ? Math.atan2(npc.panicVectorY || 0, npc.panicVectorX || 1) * 0.08 : 0;
 
     ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(lean);
     ctx.fillStyle = "rgba(30, 35, 28, 0.23)";
     ctx.beginPath();
-    ctx.ellipse(sx + 2, sy + 17, 16, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(2, 17, 16, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.strokeStyle = "#22251f";
     ctx.lineCap = "round";
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(sx - 4, sy + 8);
-    ctx.lineTo(sx - 8 + stride, sy + 18);
-    ctx.moveTo(sx + 4, sy + 8);
-    ctx.lineTo(sx + 8 - stride, sy + 18);
+    ctx.moveTo(-4, 8);
+    ctx.lineTo(-8 + stride, 18);
+    ctx.moveTo(4, 8);
+    ctx.lineTo(8 - stride, 18);
     ctx.stroke();
 
     ctx.fillStyle = npc.color;
     ctx.beginPath();
-    ctx.roundRect(sx - 9, sy - 7, 18, 20, 5);
+    ctx.roundRect(-9, -7, 18, 20, 5);
     ctx.fill();
     ctx.fillStyle = npc.accent;
-    ctx.fillRect(sx - 7, sy - 4, 14, 4);
+    ctx.fillRect(-7, -4, 14, 4);
     ctx.fillStyle = npc.skin;
     ctx.beginPath();
-    ctx.arc(sx, sy - 16, 8, 0, Math.PI * 2);
+    ctx.arc(0, -16, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = npc.hat;
     ctx.beginPath();
-    ctx.ellipse(sx, sy - 23, 11, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -23, 11, 4, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillRect(sx - 7, sy - 28, 14, 7);
+    ctx.fillRect(-7, -28, 14, 7);
+    if (panicking) {
+      ctx.fillStyle = "#fff6bf";
+      ctx.font = "900 13px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("!", 0, -40);
+    }
     ctx.restore();
   }
 
@@ -2066,7 +2195,8 @@
     }
 
     if (rob.mode === "foot") {
-      drawRobOnFoot(rob.x, rob.y, rob.heading, now);
+      if (isInRiver(rob)) drawRobSwimming(rob.x, rob.y, rob.heading, now);
+      else drawRobOnFoot(rob.x, rob.y, rob.heading, now);
     } else if (rob.mode === "bike") {
       drawBike(bike.x, bike.y, bike.heading, true, now);
     }
@@ -2519,6 +2649,60 @@
     ctx.fill();
   }
 
+  function drawRobSwimming(wx, wy, heading, now) {
+    const sx = screenX(wx);
+    const sy = screenY(wy);
+    const phase = rob.walkTime;
+    const stroke = Math.sin(phase);
+    const splash = Math.abs(Math.cos(phase));
+    const bob = Math.sin(now / 260) * 1.6;
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(214, 247, 255, 0.58)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(sx - 2, sy + 8, 26 + splash * 5, 9 + splash * 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx - 18, sy + 9, 10 + splash * 4, 4, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(sx + 18, sy + 8, 9 + splash * 3, 4, -0.2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(sx, sy + bob);
+    applyRobFacingTransform(heading);
+
+    ctx.strokeStyle = "#d7a173";
+    ctx.lineCap = "round";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-2, -7);
+    ctx.lineTo(10 + stroke * 9, -18);
+    ctx.moveTo(-2, 7);
+    ctx.lineTo(10 - stroke * 9, 18);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(24, 66, 82, 0.68)";
+    ctx.beginPath();
+    ctx.ellipse(-7, 0, 18, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#d7a173";
+    ctx.beginPath();
+    ctx.arc(8, 0, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#e7dfd3";
+    ctx.beginPath();
+    ctx.arc(11, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.44)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, -1, 19 + splash * 2, -0.8, 0.8);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawRobOnFoot(wx, wy, heading, now) {
     const sx = screenX(wx);
     const sy = screenY(wy);
@@ -2741,7 +2925,7 @@
     if (Math.abs(y - (hardwareStore.y + 92)) < 44 && x > hardwareStore.x + 60 && x < roadLeft + 24) return "driveway";
     if (Math.abs(y - (yardSale.y + 84)) < 44 && x > yardSale.x + 70 && x < roadLeft + 24) return "driveway";
     if (Math.abs(y - tractorShed.y) < 44 && x > roadRight - 24 && x < tractorShed.x + 24) return "driveway";
-    if (x < -560) return "river";
+    if (isInRiver({ x, y })) return "river";
     if (x < roadLeft) return "yard";
     return "farm";
   }
@@ -2752,16 +2936,21 @@
     if (distance({ x, y }, { x: yardSale.x + 68, y: yardSale.y + 64 }) < 150) return yardSale.name;
     if (distance({ x, y }, tractorShed) < 155) return tractorShed.name;
     if (distance({ x, y }, homeDoor) < 140) return "Rob's place";
+    if (surfaceAt(x, y) === "river") return "River";
     if (surfaceAt(x, y) === "road") return y < 0 ? "North road" : "South road";
-    if (x < -500) return "River bank";
+    if (x < world.riverRight + 68) return "River bank";
     if (x < -world.roadWidth / 2) return "House side";
     return "Farm side";
   }
 
-  function constrainPoint(point, radius) {
+  function isInRiver(point) {
+    return point.x < world.riverRight;
+  }
+
+  function constrainPoint(point, radius, options = {}) {
     point.x = clamp(point.x, world.minX + radius, world.maxX - radius);
     point.y = clamp(point.y, world.minY + radius, world.maxY - radius);
-    if (point.x < -585) point.x = -585;
+    if (!options.allowRiver && point.x < world.riverRight + world.riverBankWidth) point.x = world.riverRight + world.riverBankWidth;
   }
 
   function createWorldItem(type, x, y, origin, missionId = null) {

@@ -29,7 +29,9 @@ Controls:
 - The mission browser lets Rob switch the active errand, while the bottom mission dock gives wrapped guidance for the next pickup, drop-off, or nearby interaction.
 - Rob has a small inventory and can pick up, drop, select, and use carried items.
 - Rob has a more natural on-foot walk cycle with alternating arm/leg swing and a bit of body bob.
+- Rob can enter the river on foot, swim around with a separate animation, and climb back onto land.
 - Rob can talk to roadside neighbours and inspect small Easter eggs while walking around.
+- Neighbours now sprint away with panic bubbles when Rob approaches too closely on the motorcycle.
 - Traffic, tractors, delivery vans, and working combines add a little motion and roadside life.
 - Road vehicles now brake and steer around Rob; on-foot Rob panic-hops out of danger, and bike impacts can knock the cruiser down until Rob picks it back up.
 - Procedural sound effects provide ambient countryside noise, bird chirps, motorcycle engine rumble, horn, and inventory/mission feedback.

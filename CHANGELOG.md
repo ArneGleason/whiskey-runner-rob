@@ -2,6 +2,16 @@
 
 All notable local prototype milestones for Whiskey Runner Rob are tracked here.
 
+## 0.6.0 - River Swimming and NPC Safety
+
+- Moved the visible river left so the bank and bank-side trees sit on land instead of in the water.
+- Added river terrain for on-foot Rob.
+- Added a swimming movement feel when Rob enters the river.
+- Added a swimming animation with Rob's head, arms, ripples, and splash strokes.
+- Restored Rob's regular walking animation automatically when he gets back onto land.
+- Added motorcycle threat detection for on-foot NPCs.
+- Added NPC panic running, warning bubbles, and near-miss reactions so Rob cannot run them over.
+
 ## 0.5.0 - Traffic Threats and Bike Recovery
 
 - Added road vehicle threat detection so traffic brakes and steers toward the shoulder when Rob is in the lane.
