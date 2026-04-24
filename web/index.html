@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Whiskey Runner Rob</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="game-shell">
+      <canvas id="game" aria-label="Whiskey Runner Rob rural road prototype"></canvas>
+      <section class="hud" aria-live="polite">
+        <div>
+          <span class="eyebrow">Whiskey Runner Rob</span>
+          <strong id="modeLabel">At home</strong>
+        </div>
+        <div class="hud-meter">
+          <span>Speed</span>
+          <strong id="speedLabel">0</strong>
+        </div>
+        <div class="hud-meter">
+          <span>Place</span>
+          <strong id="placeLabel">Rob's house</strong>
+        </div>
+      </section>
+      <div id="toast" class="toast" hidden></div>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
