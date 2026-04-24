@@ -5,6 +5,8 @@
   const modeLabel = document.querySelector("#modeLabel");
   const speedLabel = document.querySelector("#speedLabel");
   const placeLabel = document.querySelector("#placeLabel");
+  const missionLabel = document.querySelector("#missionLabel");
+  const inventoryLabel = document.querySelector("#inventoryLabel");
   const toast = document.querySelector("#toast");
 
   const world = {
@@ -46,6 +48,9 @@
     right: false,
     run: false,
     actionQueued: false,
+    dropQueued: false,
+    useQueued: false,
+    selectedQueued: null,
   };
 
   const homes = [
@@ -67,6 +72,49 @@
     { x: 178, y: 755, w: 500, h: 540, fill: "#8dbd59", rows: "#6f9d42", barn: true },
     { x: 148, y: 1515, w: 460, h: 500, fill: "#d8bd63", rows: "#a78b38" },
     { x: 170, y: 2180, w: 505, h: 410, fill: "#73a84c", rows: "#588536" },
+  ];
+
+  const hardwareStore = {
+    x: -362,
+    y: -840,
+    counterX: -262,
+    counterY: -792,
+    name: "MacLeod's Hardware-ish",
+  };
+
+  const garageDrop = {
+    x: -150,
+    y: 112,
+    r: 72,
+  };
+
+  const itemTypes = {
+    domePolish: {
+      id: "domePolish",
+      name: "Dome Polish",
+      shortName: "Dome Polish",
+      color: "#9ee8ff",
+      accent: "#fff7a8",
+      useText: "Rob buffs one perfect little circle. The parrots can now see every bug that died for this commute.",
+      dropText: "Rob sets down the dome polish like it is evidence.",
+    },
+  };
+
+  const inventory = {
+    capacity: 3,
+    slots: [],
+    selected: 0,
+  };
+
+  const mission = {
+    id: "domePolishRun",
+    title: "Dome Polish Run",
+    state: "pickup",
+    complete: false,
+  };
+
+  const worldItems = [
+    createWorldItem("domePolish", hardwareStore.counterX, hardwareStore.counterY, "hardware"),
   ];
 
   const trees = makeTrees();
@@ -92,6 +140,11 @@
     if (event.code === "ArrowRight" || event.code === "KeyD") return "right";
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") return "run";
     if (event.code === "KeyE" || event.code === "Space" || event.code === "Enter") return "action";
+    if (event.code === "KeyR") return "drop";
+    if (event.code === "KeyF") return "use";
+    if (event.code === "Digit1") return "slot0";
+    if (event.code === "Digit2") return "slot1";
+    if (event.code === "Digit3") return "slot2";
     return "";
   }
 
@@ -104,18 +157,30 @@
       if (!event.repeat) input.actionQueued = true;
       return;
     }
+    if (key === "drop") {
+      if (!event.repeat) input.dropQueued = true;
+      return;
+    }
+    if (key === "use") {
+      if (!event.repeat) input.useQueued = true;
+      return;
+    }
+    if (key.startsWith("slot")) {
+      if (!event.repeat) input.selectedQueued = Number(key.slice(4));
+      return;
+    }
     input[key] = true;
   });
 
   window.addEventListener("keyup", (event) => {
     const key = normalizeKey(event);
-    if (!key || key === "action") return;
+    if (!key || key === "action" || key === "drop" || key === "use" || key.startsWith("slot")) return;
     event.preventDefault();
     input[key] = false;
   });
 
   resize();
-  say("Rob is still inside. The cruiser is waiting by the driveway.", 3.5);
+  say("Mission: fetch acrylic dome polish before the parrots start naming individual bug splats.", 4.2);
   requestAnimationFrame(loop);
 
   function loop(now) {
@@ -127,6 +192,8 @@
   }
 
   function update(dt, now) {
+    handleInventoryShortcuts();
+
     if (rob.mode === "home") {
       bike.speed *= 0.9;
       if (input.actionQueued) {
@@ -138,12 +205,13 @@
     } else if (rob.mode === "foot") {
       updateOnFoot(dt);
       if (input.actionQueued) {
-        if (distance(rob, bike) < 56) {
+        const interacted = handleInteractionAction();
+        if (!interacted && distance(rob, bike) < 56) {
           rob.mode = "bike";
           bike.speed = 0;
           bike.heading = -Math.PI / 2;
           say("Rob climbs onto the Suzuki. Acrylic dome status: deeply unnecessary.", 3.5);
-        } else if (distance(rob, homeDoor) < 52) {
+        } else if (!interacted && distance(rob, homeDoor) < 52) {
           rob.mode = "home";
           rob.x = homeDoor.x;
           rob.y = homeDoor.y;
@@ -153,7 +221,9 @@
     } else {
       updateBike(dt);
       if (input.actionQueued) {
-        if (Math.abs(bike.speed) < 24) {
+        if (Math.abs(bike.speed) < 34 && handleInteractionAction()) {
+          bike.speed = 0;
+        } else if (Math.abs(bike.speed) < 24) {
           rob.mode = "foot";
           rob.x = bike.x - Math.cos(bike.heading + Math.PI / 2) * 30;
           rob.y = bike.y - Math.sin(bike.heading + Math.PI / 2) * 30;
@@ -167,8 +237,159 @@
     }
 
     input.actionQueued = false;
+    input.dropQueued = false;
+    input.useQueued = false;
+    input.selectedQueued = null;
     updateCamera(dt);
     updateHud(now);
+  }
+
+  function handleInventoryShortcuts() {
+    if (input.selectedQueued !== null) {
+      selectInventorySlot(input.selectedQueued);
+    }
+
+    if (input.dropQueued) {
+      dropSelectedItem();
+    }
+
+    if (input.useQueued) {
+      useSelectedItem();
+    }
+  }
+
+  function handleInteractionAction() {
+    const actor = actorPoint();
+    if (tryDeliverDomePolish(actor)) return true;
+    if (tryPickupNearbyItem(actor)) return true;
+    return false;
+  }
+
+  function tryPickupNearbyItem(actor) {
+    const item = nearestWorldItem(actor, 74);
+    if (!item) return false;
+    if (inventory.slots.length >= inventory.capacity) {
+      say("Rob pats every pocket and finds only receipts, lint, and poor planning.", 2.8);
+      return true;
+    }
+
+    item.carried = true;
+    inventory.slots.push(item.type);
+    inventory.selected = inventory.slots.length - 1;
+    say(`Picked up ${itemTypes[item.type].name}. The clerk says it is 'probably safe on acrylic.'`, 3.5);
+
+    if (item.type === "domePolish" && mission.state === "pickup") {
+      mission.state = "return";
+    }
+
+    return true;
+  }
+
+  function tryDeliverDomePolish(actor) {
+    if (mission.complete || !isNearGarage(actor) || !hasItem("domePolish")) return false;
+    removeItemFromInventory("domePolish");
+    mission.state = "complete";
+    mission.complete = true;
+    say("Mission complete: Rob drops off the polish. Two parrots admire a bug-free future and immediately smudge the dome.", 5);
+    return true;
+  }
+
+  function selectInventorySlot(index) {
+    if (index >= inventory.capacity) return;
+    inventory.selected = index;
+    if (inventory.slots[index]) {
+      say(`Selected ${itemTypes[inventory.slots[index]].name}.`, 1.4);
+    }
+  }
+
+  function dropSelectedItem() {
+    if (!inventory.slots.length) {
+      say("Inventory empty. Rob is traveling light, spiritually and financially.", 2.4);
+      return;
+    }
+
+    const actor = actorPoint();
+    if (rob.mode === "bike" && Math.abs(bike.speed) > 22) {
+      say("Rob refuses to throw cargo off a moving cruiser. This is what he calls maturity.", 2.6);
+      return;
+    }
+
+    const selected = clamp(inventory.selected, 0, inventory.slots.length - 1);
+    const type = inventory.slots.splice(selected, 1)[0];
+    inventory.selected = clamp(selected, 0, Math.max(0, inventory.slots.length - 1));
+    const dropped = createWorldItem(type, actor.x + 26, actor.y + 18, "dropped");
+    worldItems.push(dropped);
+    say(itemTypes[type].dropText, 2.8);
+  }
+
+  function useSelectedItem() {
+    if (!inventory.slots.length) {
+      say("Rob has nothing to use except confidence, and that is already equipped.", 2.4);
+      return;
+    }
+
+    if (rob.mode === "bike" && Math.abs(bike.speed) > 10) {
+      say("Using supplies while riding is how you become a story told at the hardware store.", 2.6);
+      return;
+    }
+
+    const type = inventory.slots[clamp(inventory.selected, 0, inventory.slots.length - 1)];
+    const actor = actorPoint();
+    if (type === "domePolish" && isNearGarage(actor)) {
+      tryDeliverDomePolish(actor);
+      return;
+    }
+
+    say(itemTypes[type].useText, 3.4);
+  }
+
+  function actorPoint() {
+    if (rob.mode === "bike") return bike;
+    if (rob.mode === "home") return homeDoor;
+    return rob;
+  }
+
+  function nearestWorldItem(actor, radius) {
+    let nearest = null;
+    let nearestDistance = radius;
+    for (const item of worldItems) {
+      if (item.carried || item.delivered) continue;
+      const itemDistance = distance(actor, item);
+      if (itemDistance < nearestDistance) {
+        nearest = item;
+        nearestDistance = itemDistance;
+      }
+    }
+    return nearest;
+  }
+
+  function hasItem(type) {
+    return inventory.slots.includes(type);
+  }
+
+  function removeItemFromInventory(type) {
+    const index = inventory.slots.indexOf(type);
+    if (index === -1) return false;
+    inventory.slots.splice(index, 1);
+    inventory.selected = clamp(inventory.selected, 0, Math.max(0, inventory.slots.length - 1));
+    return true;
+  }
+
+  function isNearGarage(actor) {
+    return distance(actor, garageDrop) < garageDrop.r;
+  }
+
+  function missionStatusText() {
+    if (mission.state === "pickup") return "Get dome polish";
+    if (mission.state === "return") return "Bring it to garage";
+    return "Dome de-bugged";
+  }
+
+  function inventoryText() {
+    if (!inventory.slots.length) return "Empty";
+    return inventory.slots
+      .map((type, index) => `${index === inventory.selected ? ">" : ""}${itemTypes[type].shortName}`)
+      .join(" / ");
   }
 
   function updateOnFoot(dt) {
@@ -241,6 +462,9 @@
       placeLabel.textContent = placeName(bike.x, bike.y);
     }
 
+    missionLabel.textContent = missionStatusText();
+    inventoryLabel.textContent = inventoryText();
+
     if (toastUntil && now > toastUntil) {
       toast.hidden = true;
       toastUntil = 0;
@@ -256,9 +480,12 @@
     drawFields();
     drawRoad();
     drawDriveways();
+    drawHardwareStore();
     drawHouses();
     drawTrees();
     drawFarmDetails();
+    drawWorldItems(now);
+    drawMissionMarkers(now);
     drawBikeAndRob(now);
     drawPrompts(now);
     drawVignette(width, height);
@@ -377,6 +604,7 @@
       const y = home.primary ? drivewayY : home.y + 62;
       drawRedDirtPath(home.x + 54, y, -world.roadWidth / 2 - 10, y, home.primary ? 32 : 24);
     }
+    drawRedDirtPath(hardwareStore.x + 96, hardwareStore.y + 92, -world.roadWidth / 2 - 8, hardwareStore.y + 92, 28);
   }
 
   function drawHouses() {
@@ -434,6 +662,18 @@
       return;
     }
 
+    const actor = actorPoint();
+    const nearbyItem = nearestWorldItem(actor, 74);
+    if (nearbyItem && (rob.mode !== "bike" || Math.abs(bike.speed) < 34)) {
+      drawPrompt(nearbyItem.x, nearbyItem.y - 42, "E", now);
+      return;
+    }
+
+    if (!mission.complete && hasItem("domePolish") && isNearGarage(actor) && (rob.mode !== "bike" || Math.abs(bike.speed) < 34)) {
+      drawPrompt(garageDrop.x, garageDrop.y - 50, "E", now);
+      return;
+    }
+
     if (rob.mode === "foot" && distance(rob, bike) < 72) {
       drawPrompt(bike.x, bike.y - 54, "E", now);
       return;
@@ -450,6 +690,112 @@
     gradient.addColorStop(1, "rgba(10, 32, 24, 0.22)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+  }
+
+  function drawHardwareStore() {
+    const x = screenX(hardwareStore.x);
+    const y = screenY(hardwareStore.y);
+    ctx.fillStyle = "rgba(36, 38, 30, 0.24)";
+    ctx.fillRect(x - 10, y + 12, 146, 96);
+
+    ctx.fillStyle = "#d7c38e";
+    ctx.fillRect(x, y + 28, 132, 82);
+    ctx.strokeStyle = "rgba(74, 59, 38, 0.42)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y + 28, 132, 82);
+
+    ctx.fillStyle = "#456f68";
+    ctx.beginPath();
+    ctx.moveTo(x - 9, y + 34);
+    ctx.lineTo(x + 66, y - 8);
+    ctx.lineTo(x + 141, y + 34);
+    ctx.lineTo(x + 124, y + 48);
+    ctx.lineTo(x + 8, y + 48);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#58372a";
+    ctx.fillRect(x + 16, y + 64, 30, 46);
+    ctx.fillStyle = "#eaf1d7";
+    ctx.fillRect(x + 62, y + 64, 48, 24);
+
+    ctx.fillStyle = "#f9ebaa";
+    ctx.strokeStyle = "#58372a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x + 18, y + 12, 96, 24, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#4b3328";
+    ctx.font = "700 10px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("HARDWARE-ISH", x + 66, y + 25);
+
+    drawCrate(hardwareStore.counterX + 6, hardwareStore.counterY + 4, "#83623d");
+  }
+
+  function drawWorldItems(now) {
+    for (const item of worldItems) {
+      if (item.carried || item.delivered) continue;
+      const sx = screenX(item.x);
+      const sy = screenY(item.y) + Math.sin(now / 210 + item.bobOffset) * 3;
+      if (sx < -50 || sx > canvas.clientWidth + 50 || sy < -70 || sy > canvas.clientHeight + 70) continue;
+      const type = itemTypes[item.type];
+
+      ctx.save();
+      ctx.fillStyle = "rgba(28, 35, 29, 0.22)";
+      ctx.beginPath();
+      ctx.ellipse(sx + 2, sy + 17, 20, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = type.color;
+      ctx.strokeStyle = "#23414b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(sx - 13, sy - 13, 26, 30, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = type.accent;
+      ctx.fillRect(sx - 8, sy - 7, 16, 10);
+      ctx.fillStyle = "#25434a";
+      ctx.font = "700 8px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("BUG", sx, sy - 2);
+      ctx.restore();
+    }
+  }
+
+  function drawMissionMarkers(now) {
+    if (mission.complete) return;
+    const tx = mission.state === "pickup" ? hardwareStore.counterX : garageDrop.x;
+    const ty = mission.state === "pickup" ? hardwareStore.counterY : garageDrop.y;
+    const pulse = 1 + Math.sin(now / 220) * 0.08;
+    const sx = screenX(tx);
+    const sy = screenY(ty);
+
+    ctx.save();
+    ctx.strokeStyle = mission.state === "pickup" ? "rgba(255, 236, 131, 0.85)" : "rgba(155, 235, 255, 0.85)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy + 8, 40 * pulse, 20 * pulse, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(27, 38, 34, 0.78)";
+    ctx.strokeStyle = "rgba(255, 249, 223, 0.72)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(sx - 58, sy - 62, 116, 26, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#fff6bf";
+    ctx.font = "700 11px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(mission.state === "pickup" ? "Dome polish" : "Rob's garage", sx, sy - 49);
+    ctx.restore();
   }
 
   function drawHouse(home) {
@@ -723,6 +1069,24 @@
     ctx.fillText("ROB", sx, sy + 10);
   }
 
+  function drawCrate(wx, wy, fill) {
+    const sx = screenX(wx);
+    const sy = screenY(wy);
+    ctx.fillStyle = "rgba(36, 33, 27, 0.24)";
+    ctx.fillRect(sx + 3, sy + 5, 40, 26);
+    ctx.fillStyle = fill;
+    ctx.fillRect(sx, sy, 38, 26);
+    ctx.strokeStyle = "rgba(54, 39, 24, 0.64)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx, sy, 38, 26);
+    ctx.beginPath();
+    ctx.moveTo(sx + 3, sy + 4);
+    ctx.lineTo(sx + 35, sy + 22);
+    ctx.moveTo(sx + 35, sy + 4);
+    ctx.lineTo(sx + 3, sy + 22);
+    ctx.stroke();
+  }
+
   function drawFence(x, minY, maxY) {
     ctx.save();
     ctx.strokeStyle = "rgba(99, 66, 38, 0.72)";
@@ -778,12 +1142,15 @@
     const roadRight = world.roadX + world.roadWidth / 2;
     if (x > roadLeft && x < roadRight) return "road";
     if (Math.abs(y - drivewayY) < 42 && x > -285 && x < roadLeft + 24) return "driveway";
+    if (Math.abs(y - (hardwareStore.y + 92)) < 44 && x > hardwareStore.x + 60 && x < roadLeft + 24) return "driveway";
     if (x < -560) return "river";
     if (x < roadLeft) return "yard";
     return "farm";
   }
 
   function placeName(x, y) {
+    if (distance({ x, y }, garageDrop) < garageDrop.r) return "Rob's garage";
+    if (distance({ x, y }, { x: hardwareStore.x + 66, y: hardwareStore.y + 64 }) < 145) return hardwareStore.name;
     if (distance({ x, y }, homeDoor) < 140) return "Rob's place";
     if (surfaceAt(x, y) === "road") return y < 0 ? "North road" : "South road";
     if (x < -500) return "River bank";
@@ -795,6 +1162,19 @@
     point.x = clamp(point.x, world.minX + radius, world.maxX - radius);
     point.y = clamp(point.y, world.minY + radius, world.maxY - radius);
     if (point.x < -585) point.x = -585;
+  }
+
+  function createWorldItem(type, x, y, origin) {
+    return {
+      id: `${type}-${Math.round(x)}-${Math.round(y)}-${origin}`,
+      type,
+      x,
+      y,
+      origin,
+      carried: false,
+      delivered: false,
+      bobOffset: (Math.abs(x * 31 + y * 17) % 628) / 100,
+    };
   }
 
   function screenX(x) {

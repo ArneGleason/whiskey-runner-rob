@@ -358,6 +358,19 @@ The upgrade and dubious engineering zone. Motorcycle work, weird parts, and expe
 
 Rob needs to deliver a cigar box to a friend down the road. The route introduces steering, acceleration, interaction, and simple obstacles like potholes and a tractor.
 
+### Mission 1A: Dome Polish Run
+
+Rob needs acrylic dome polish from the local hardware store because the parrot dome has become a tragic museum of dead bugs. The player rides to MacLeod's Hardware-ish, picks up the polish, carries it in inventory, and brings it back to Rob's garage.
+
+This mission exists to prove:
+
+- Pickup.
+- Inventory carry.
+- Dropping and re-picking items.
+- Using a selected item.
+- Drop-off / delivery completion.
+- A simple mission objective changing from pickup to return.
+
 ### Mission 2: Red Dirt Express
 
 A whiskey delivery has to cross farm roads after rain. Mud patches make the bike slide.
@@ -395,6 +408,26 @@ Cargo can have properties:
 - Noisy.
 - Time-sensitive.
 - Tempting to Rob.
+
+### Inventory
+
+Rob has a small carried inventory for mission items and useful objects.
+
+Current prototype behaviour:
+
+- Rob can pick up world items.
+- Rob can carry up to three inventory items.
+- Rob can select an inventory slot.
+- Rob can drop the selected item into the world.
+- Rob can pick dropped items back up.
+- Rob can use the selected item.
+- Mission drop-offs can consume items from inventory.
+
+Design direction:
+
+- Keep the inventory small so the game stays about riding and errands, not menu management.
+- Items should have funny use/drop messages even before they have deep mechanics.
+- Mission items should use the same inventory functions as ordinary items wherever possible.
 
 ### Companions
 
@@ -511,11 +544,17 @@ Current playable scope:
 - Mounted Rob includes the clear acrylic dome and two parrots as his signature silhouette.
 - The camera follows Rob on foot and on the bike.
 - Dirt, yard, farm, road, and river-bank areas already have different handling implications.
+- Rob has a three-slot inventory.
+- Rob can pick up, drop, re-pick, and use carried items.
+- First mission: fetch acrylic dome polish from MacLeod's Hardware-ish and bring it back to Rob's garage.
 
 Prototype controls:
 
 - `WASD` / arrow keys: move on foot, throttle and steer on bike.
 - `E`, `Space`, or `Enter`: step out, mount, dismount, or honk while moving.
+- `R`: drop selected inventory item.
+- `F`: use selected inventory item.
+- `1`, `2`, `3`: select inventory slot.
 - `Shift`: move faster on foot.
 
 ## Open Questions
