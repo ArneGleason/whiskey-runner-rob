@@ -2,6 +2,13 @@
 
 All notable local prototype milestones for Whiskey Runner Rob are tracked here.
 
+## 0.9.0 - Optional Nonsense Checklist
+
+- Added a 10-item optional checklist requested by Rob's neighbours, business desk, road crew, and other questionable authorities.
+- Added a HUD checklist button and `C` keyboard shortcut.
+- Added auto-completion hooks for river swimming, first-time Easter egg inspections, and talking to four different neighbours.
+- Added checklist progress feedback without changing mission progression, because useless accountability is still accountability.
+
 ## 0.8.0 - End of Day Finale
 
 - Added an end-of-day state after all five missions are complete.

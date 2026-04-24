@@ -17,6 +17,11 @@
   const missionOverlay = document.querySelector("#missionOverlay");
   const missionList = document.querySelector("#missionList");
   const missionClose = document.querySelector("#missionClose");
+  const checklistButton = document.querySelector("#checklistButton");
+  const checklistOverlay = document.querySelector("#checklistOverlay");
+  const checklistList = document.querySelector("#checklistList");
+  const checklistClose = document.querySelector("#checklistClose");
+  const checklistProgress = document.querySelector("#checklistProgress");
   const endingOverlay = document.querySelector("#endingOverlay");
   const endingClose = document.querySelector("#endingClose");
   const endingCanvas = document.querySelector("#endingCanvas");
@@ -617,6 +622,92 @@
     },
   ];
 
+  const optionalGoals = [
+    {
+      id: "riverSwim",
+      requester: "Mavis",
+      title: "Take a Certified River Dip",
+      detail: "Step into the river long enough for Rob's boots to become chowder.",
+      completeText: "Mavis updates the local emergency gossip ledger.",
+    },
+    {
+      id: "ditchCoolerAudit",
+      requester: "Gord",
+      title: "Audit the Ditch Cooler",
+      detail: "Find the cooler containing warm ginger ale and suspicious legal posture.",
+      completeText: "The cooler remains not evidence, which is exactly what evidence would say.",
+    },
+    {
+      id: "mailboxComplaint",
+      requester: "Darlene",
+      title: "Read the Mailbox Complaint",
+      detail: "Inspect the mailbox manifesto before it starts holding public office.",
+      completeText: "The mailbox has been heard, which is more than most policy consultations.",
+    },
+    {
+      id: "bugSlurryReview",
+      requester: "The Parrot Union",
+      title: "Review Premium Bug Slurry",
+      detail: "Inspect the bug smear bucket and decide whether it is wax, soup, or an indictment.",
+      completeText: "The parrots reject the bouquet and demand hazard pay.",
+    },
+    {
+      id: "potatoWiretap",
+      requester: "Burt",
+      title: "Confirm the Potatoes Are Listening",
+      detail: "Inspect the potato warning sign without admitting it makes a little sense.",
+      completeText: "Burt writes 'probable potato surveillance' on a napkin and calls it research.",
+    },
+    {
+      id: "bridgeJarFraud",
+      requester: "Cecil",
+      title: "Investigate the Fake Toll Jar",
+      detail: "Find the jar collecting bridge tolls for a bridge that is absolutely not nearby.",
+      completeText: "Cecil declares the buttons taxable and the tooth a legacy asset.",
+    },
+    {
+      id: "potatoPhoneCheck",
+      requester: "Miriam",
+      title: "Check the Emergency Potato Phone",
+      detail: "Inspect the crop emergency phone and do not ask why the potato has better reception.",
+      completeText: "Miriam marks it as municipal readiness, technically.",
+    },
+    {
+      id: "barrelDenial",
+      requester: "Road Crew",
+      title: "Verify the Barrel Denial",
+      detail: "Inspect the suspicious blue barrel labelled like it lost a legal fight.",
+      completeText: "The road crew appreciates Rob not opening it, which feels ominous.",
+    },
+    {
+      id: "ferrySandwich",
+      requester: "The Ferry Committee That Does Not Exist",
+      title: "Consult the Sandwich-Era Ferry Schedule",
+      detail: "Inspect the old ferry schedule and learn how maritime planning used to smell.",
+      completeText: "The schedule remains more punctual than Rob's tax receipts.",
+    },
+    {
+      id: "gossipCommittee",
+      requester: "Rob's Business Desk",
+      title: "Harvest Four Neighbour Opinions",
+      detail: "Talk to four different neighbours and let them damage Rob's brand for free.",
+      completeText: "Four opinions collected. None deductible.",
+    },
+  ];
+
+  const optionalGoalById = Object.fromEntries(optionalGoals.map((goal) => [goal.id, goal]));
+  const discoveryGoalIds = {
+    ditchCooler: "ditchCoolerAudit",
+    mailboxManifesto: "mailboxComplaint",
+    bugSmear: "bugSlurryReview",
+    potatoWarning: "potatoWiretap",
+    bridgeTollJar: "bridgeJarFraud",
+    emergencyPotatoPhone: "potatoPhoneCheck",
+    blueBarrel: "barrelDenial",
+    deadFerrySchedule: "ferrySandwich",
+  };
+  const talkedNpcIds = new Set();
+
   const roadVehicles = [
     {
       kind: "pickup",
@@ -738,6 +829,7 @@
     if (event.code === "KeyR") return "drop";
     if (event.code === "KeyF") return "use";
     if (event.code === "KeyM") return "mission";
+    if (event.code === "KeyC") return "checklist";
     if (event.code === "Escape") return "escape";
     if (event.code === "Digit1") return "slot0";
     if (event.code === "Digit2") return "slot1";
@@ -767,8 +859,15 @@
       toggleMissionBrowser();
       return;
     }
-    if (!missionOverlay.hidden) {
-      if (key === "escape") closeMissionBrowser();
+    if (key === "checklist") {
+      toggleChecklist();
+      return;
+    }
+    if (!missionOverlay.hidden || !checklistOverlay.hidden) {
+      if (key === "escape") {
+        closeMissionBrowser();
+        closeChecklist();
+      }
       return;
     }
     if (key === "action") {
@@ -796,7 +895,7 @@
 
   window.addEventListener("keyup", (event) => {
     const key = normalizeKey(event);
-    if (!key || key === "action" || key === "drop" || key === "use" || key === "mission" || key === "escape" || key.startsWith("slot")) return;
+    if (!key || key === "action" || key === "drop" || key === "use" || key === "mission" || key === "checklist" || key === "escape" || key.startsWith("slot")) return;
     event.preventDefault();
     if (!gameStarted) return;
     input[key] = false;
@@ -806,6 +905,8 @@
   introScroll.addEventListener("animationend", unlockIntro, { once: true });
   missionButton.addEventListener("click", openMissionBrowser);
   missionClose.addEventListener("click", closeMissionBrowser);
+  checklistButton.addEventListener("click", openChecklist);
+  checklistClose.addEventListener("click", closeChecklist);
   endingClose.addEventListener("click", closeEndingOverlay);
 
   resize();
@@ -856,6 +957,7 @@
     introReady = true;
     introOverlay.hidden = true;
     closeMissionBrowser();
+    closeChecklist();
     clearMovementInput();
     inventory.slots = [];
     inventory.selected = 0;
@@ -964,6 +1066,7 @@
     gameStarted = true;
     introOverlay.hidden = true;
     renderMissionBrowser();
+    renderChecklist();
     playTone({ frequency: 330, duration: 0.18, type: "triangle", gain: 0.08 });
     say("Mission: fetch acrylic dome polish before the parrots start naming individual bug splats.", 4.2);
   }
@@ -975,6 +1078,7 @@
 
   function openMissionBrowser() {
     if (!gameStarted) return;
+    closeChecklist();
     clearMovementInput();
     renderMissionBrowser();
     missionOverlay.hidden = false;
@@ -984,6 +1088,25 @@
   function closeMissionBrowser() {
     missionOverlay.hidden = true;
     missionButton.textContent = "Missions";
+  }
+
+  function toggleChecklist() {
+    if (checklistOverlay.hidden) openChecklist();
+    else closeChecklist();
+  }
+
+  function openChecklist() {
+    if (!gameStarted) return;
+    closeMissionBrowser();
+    clearMovementInput();
+    renderChecklist();
+    checklistOverlay.hidden = false;
+    checklistButton.textContent = "Close";
+  }
+
+  function closeChecklist() {
+    checklistOverlay.hidden = true;
+    checklistButton.textContent = "Checklist";
   }
 
   function renderMissionBrowser() {
@@ -1016,6 +1139,53 @@
       });
       missionList.append(card);
     }
+  }
+
+  function renderChecklist() {
+    checklistList.replaceChildren();
+    const completed = optionalGoals.filter((goal) => goal.complete).length;
+    checklistProgress.textContent = `${completed}/${optionalGoals.length} optional items completed`;
+
+    for (const goal of optionalGoals) {
+      const card = document.createElement("article");
+      card.className = "checklist-item";
+      if (goal.complete) card.classList.add("is-complete");
+
+      const stamp = document.createElement("span");
+      stamp.className = "checklist-stamp";
+      stamp.textContent = goal.complete ? "DONE" : "OPEN";
+
+      const body = document.createElement("div");
+      const requester = document.createElement("span");
+      requester.className = "checklist-requester";
+      requester.textContent = `Requested by ${goal.requester}`;
+      const title = document.createElement("h3");
+      title.textContent = goal.title;
+      const detail = document.createElement("p");
+      detail.textContent = goal.detail;
+
+      body.append(requester, title, detail);
+      card.append(stamp, body);
+      checklistList.append(card);
+    }
+  }
+
+  function completeOptionalGoal(id, options = {}) {
+    const goal = optionalGoalById[id];
+    if (!goal || goal.complete) return false;
+
+    goal.complete = true;
+    renderChecklist();
+
+    window.setTimeout(() => {
+      say(`Checklist updated: ${goal.title}. ${goal.completeText}`, 4.1);
+    }, options.delay || 0);
+    return true;
+  }
+
+  function completeDiscoveryGoal(discoveryId) {
+    const goalId = discoveryGoalIds[discoveryId];
+    if (goalId) completeOptionalGoal(goalId, { delay: 950 });
   }
 
   function clearMovementInput() {
@@ -1130,6 +1300,7 @@
   function finishRobDay() {
     dayEnded = true;
     closeMissionBrowser();
+    closeChecklist();
     clearMovementInput();
     bike.speed = 0;
     playMissionCompleteSound();
@@ -1190,6 +1361,8 @@
     npc.talkIndex += 1;
     npc.bubbleText = line;
     npc.bubbleUntil = performance.now() + 3600;
+    talkedNpcIds.add(npc.id);
+    if (talkedNpcIds.size >= 4) completeOptionalGoal("gossipCommittee", { delay: 800 });
     playUseSound();
     say(`${npc.name}: "${line}"`, 4.2);
     return true;
@@ -1203,6 +1376,7 @@
     discovery.seen = true;
     playUseSound();
     say(firstLook ? `Discovered ${discovery.label}: ${discovery.text}` : discovery.repeatText, firstLook ? 4.8 : 3.3);
+    if (firstLook) completeDiscoveryGoal(discovery.id);
     return true;
   }
 
@@ -2068,6 +2242,7 @@
     const swimming = isInRiver(rob);
     if (swimming && !rob.wasSwimming) {
       say("Rob enters the river. The parrots are not certified lifeguards, but they are screaming like management.", 3.2);
+      completeOptionalGoal("riverSwim", { delay: 900 });
     } else if (!swimming && rob.wasSwimming) {
       say("Rob sloshes back onto land smelling like ambition and river mud.", 2.8);
     }

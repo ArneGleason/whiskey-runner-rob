@@ -228,6 +228,7 @@ Initial target:
 - `D` / `Right`: steer right.
 - `Space`: action / interact / honk / confirm.
 - `Shift`: boost or careful-control modifier.
+- `C`: optional goals / discovery checklist.
 - Mouse: menu selection, mission selection, possible aiming for special actions.
 
 Controls should remain simple enough that a player understands the game in 10 seconds.
@@ -576,6 +577,7 @@ Current playable scope:
 - South-road missions currently include Clamato Ceasefire and Septic Diplomacy.
 - Completing all five missions starts the end-of-day flow: the target marker points Rob home, dusk lighting rolls in, and entering the house triggers the finale.
 - A mission browser lets the player switch the active errand.
+- An optional 10-item checklist points players toward swimming, discoveries, and neighbour gossip without affecting mission progression.
 - A bottom mission dock provides wrapped guidance for the current mission and nearby walk-around interactions.
 - The target marker points toward the current mission pickup, dropped mission item, or delivery point.
 - On-foot Rob can talk to nearby neighbours and inspect small roadside Easter eggs.
@@ -597,6 +599,7 @@ Prototype controls:
 - `WASD` / arrow keys: move on foot, throttle and steer on bike.
 - `E`, `Space`, or `Enter`: step out, mount, dismount, or honk while moving.
 - `M`: open the mission browser and switch active errands.
+- `C`: open Rob's optional nonsense checklist.
 - `R`: drop selected inventory item.
 - `F`: use selected inventory item.
 - `1`, `2`, `3`: select inventory slot.

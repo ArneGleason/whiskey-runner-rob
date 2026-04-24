@@ -19,6 +19,7 @@ Open `web/index.html` in a browser.
 - `WASD` / arrow keys: move on foot, throttle and steer on the bike.
 - `E`, `Space`, or `Enter`: step outside, interact, mount, dismount, honk, or pick up the bike after physics files a complaint.
 - `M`: open the mission browser and switch active errands.
+- `C`: open Rob's optional nonsense checklist.
 - `R`: drop the selected inventory item.
 - `F`: use the selected inventory item.
 - `1` / `2` / `3`: select an inventory slot.
@@ -39,12 +40,14 @@ Open `web/index.html` in a browser.
   - Septic Diplomacy
 - Completing two starter errands opens the south-road section, which adds multi-leg missions, Low Tide Bait & Regret, the Legion Hall of Folding Chair Justice, the Blue Rocket porta-loo, a scenic ditch lookout, and more bad decisions with labels.
 - Completing all five missions starts the end-of-day finale: dusk rolls in, Rob is guided home, and entering the house shows an animated couch scene with old Japanese monster movies, parrots, glowing snacks, and no remaining interest in commerce.
+- Rob now has a 10-item optional checklist of community-requested nonsense. It does not advance the game, improve Rob, or satisfy any reasonable standard, but it points players toward swimming, roadside discoveries, and neighbourhood gossip.
 
 ## Systems
 
 - Inventory supports pickup, drop, re-pick, select, and use actions.
 - Missions can be single-step or multi-leg pickup/drop chains.
 - The mission browser lets Rob switch active errands, while the bottom mission dock gives wrapped guidance for the current objective and nearby interactions.
+- The optional checklist auto-completes when Rob finds Easter eggs, swims in the river, or talks to enough neighbours to form a small, cranky advisory committee.
 - Target markers and offscreen arrows point toward pickups, delivery spots, dropped mission items, and the final trip home.
 - Rob can swim in the river, then climb back onto land like a man who has learned nothing.
 - NPC neighbours can be talked to on foot, and they sprint away with panic bubbles when Rob approaches too closely on the motorcycle.

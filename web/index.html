@@ -31,6 +31,7 @@
           <strong id="inventoryLabel">Empty</strong>
         </div>
         <button id="missionButton" class="hud-button" type="button">Missions</button>
+        <button id="checklistButton" class="hud-button" type="button">Checklist</button>
       </section>
       <section class="mission-dock" aria-live="polite">
         <div>
@@ -51,6 +52,23 @@
           </header>
           <p class="mission-help">Pick the errand Rob is currently pretending is a business vertical. Press M any time to come back here.</p>
           <div id="missionList" class="mission-list"></div>
+        </div>
+      </section>
+      <section id="checklistOverlay" class="checklist-overlay" aria-labelledby="checklistTitle" hidden>
+        <div class="checklist-panel">
+          <header class="mission-header">
+            <div>
+              <span class="eyebrow">Voluntary Community Accountability Theater</span>
+              <h2 id="checklistTitle">Optional Nonsense Checklist</h2>
+            </div>
+            <button id="checklistClose" class="mission-close" type="button" aria-label="Close optional checklist">Close</button>
+          </header>
+          <p class="mission-help">
+            None of this advances the day. It merely proves Rob can follow instructions from people who should
+            not be issuing them.
+          </p>
+          <div id="checklistProgress" class="checklist-progress" aria-live="polite">0/10 optional items completed</div>
+          <div id="checklistList" class="checklist-list"></div>
         </div>
       </section>
       <section id="endingOverlay" class="ending-overlay" aria-labelledby="endingTitle" hidden>
@@ -102,8 +120,8 @@
               <p>
                 Controls: move with WASD or arrows. Use E, Space, or Enter to interact, mount, dismount, or pick the
                 bike up after Rob loses a disagreement with traffic. M opens the mission browser. R drops the selected
-                item. F uses it. Number keys pick inventory slots. Honking while moving is not helpful, but it is
-                emotionally available.
+                item. F uses it. C opens the optional checklist, which is legally distinct from progress. Number keys
+                pick inventory slots. Honking while moving is not helpful, but it is emotionally available.
               </p>
               <p class="intro-signoff">
                 Good luck. Try not to polish the dome with the parrots still licking it.

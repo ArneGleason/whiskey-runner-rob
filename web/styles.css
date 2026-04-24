@@ -154,7 +154,8 @@ body {
   backdrop-filter: blur(9px);
 }
 
-.mission-overlay {
+.mission-overlay,
+.checklist-overlay {
   position: fixed;
   inset: 0;
   display: grid;
@@ -164,11 +165,13 @@ body {
   z-index: 8;
 }
 
-.mission-overlay[hidden] {
+.mission-overlay[hidden],
+.checklist-overlay[hidden] {
   display: none;
 }
 
-.mission-panel {
+.mission-panel,
+.checklist-panel {
   width: min(760px, 100%);
   max-height: min(760px, calc(100vh - 40px));
   overflow: auto;
@@ -179,6 +182,10 @@ body {
   color: #fff8df;
   box-shadow: 0 24px 80px rgba(6, 17, 14, 0.48);
   backdrop-filter: blur(10px);
+}
+
+.checklist-panel {
+  width: min(820px, 100%);
 }
 
 .mission-header {
@@ -269,6 +276,83 @@ body {
   font-size: 0.76rem;
   font-weight: 850;
   text-transform: uppercase;
+}
+
+.checklist-progress {
+  display: inline-flex;
+  margin: 0 0 13px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 227, 140, 0.34);
+  border-radius: 8px;
+  background: rgba(255, 227, 140, 0.13);
+  color: #ffe38c;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.checklist-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checklist-item {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  min-height: 128px;
+  padding: 13px;
+  border: 1px solid rgba(255, 248, 223, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 248, 223, 0.08);
+  color: #fff8df;
+}
+
+.checklist-item.is-complete {
+  border-color: rgba(149, 235, 196, 0.52);
+  background: rgba(88, 188, 133, 0.16);
+}
+
+.checklist-stamp {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 248, 223, 0.28);
+  border-radius: 8px;
+  background: rgba(12, 25, 22, 0.32);
+  color: rgba(255, 248, 223, 0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.checklist-item.is-complete .checklist-stamp {
+  border-color: rgba(149, 235, 196, 0.68);
+  background: rgba(88, 188, 133, 0.28);
+  color: #d8ffe7;
+}
+
+.checklist-item h3 {
+  margin: 0 0 5px;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.checklist-requester {
+  display: block;
+  margin-bottom: 5px;
+  color: #ffe38c;
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.checklist-item p {
+  margin: 0;
+  color: rgba(255, 248, 223, 0.74);
+  font-size: 0.88rem;
+  line-height: 1.35;
 }
 
 .ending-overlay {
@@ -536,6 +620,10 @@ body {
 
   .hud-button {
     flex: 1 1 100%;
+  }
+
+  .checklist-list {
+    grid-template-columns: 1fr;
   }
 
   .mission-dock {
